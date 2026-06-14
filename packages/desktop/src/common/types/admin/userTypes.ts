@@ -16,8 +16,8 @@
 export type UserRole = 'admin' | 'member';
 
 /**
- * Public user info returned by the backend. Mirrors `PublicUser`.
- * Never includes password hashes or secrets.
+ * Public user info returned by the backend. Mirrors the production `User`
+ * payload. Never includes password hashes or secrets.
  */
 export interface IAdminUser {
   id: string;
@@ -25,6 +25,10 @@ export interface IAdminUser {
   role: UserRole;
   is_active: boolean;
   display_name: string | null;
+  email?: string | null;
+  /** ISO string or epoch (ms/seconds); absent/null when the user never logged in. */
+  last_login?: string | number | null;
+  created_at?: string | number | null;
 }
 
 /** Request body for `POST /api/admin/users`. */
