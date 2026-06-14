@@ -558,7 +558,7 @@ export class BackendLifecycleManager {
     const args = buildSpawnArgs({
       port: this._port,
       dbPath,
-      local: true,
+      local: process.env.AIONUI_MULTIUSER !== "1",
       parentPid: process.pid,
       logDir,
       workDir: dirs?.workDir,
