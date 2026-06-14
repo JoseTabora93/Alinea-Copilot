@@ -10,26 +10,35 @@
     monospace;
   --code-font-size: 13px;
   --aion-overlay-bg: #ffffff;
-  --aion-overlay-text: #1d2129;
-  --aion-overlay-border: #e5e6eb;
+  --aion-overlay-text: #1a1f17;
+  --aion-overlay-border: #d8d7d1;
   --aion-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme='dark'],
 body[arco-theme='dark'] {
-  --aion-overlay-bg: #0e0e0e;
-  --aion-overlay-text: #f2f3f5;
-  --aion-overlay-border: #333333;
+  --aion-overlay-bg: #282d31;
+  --aion-overlay-text: #f2f3ef;
+  --aion-overlay-border: #3f464e;
   --aion-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
-/* Arco's arco.css puts 'Inter' first in font-family, which causes very thin
-   text on systems that have Inter installed. Override to use system fonts. */
+/* Override Arco's default font to use Alinea brand font (Poppins) */
 html,
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    'Poppins',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 html body .arco-tooltip-content,

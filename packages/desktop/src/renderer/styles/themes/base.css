@@ -3,6 +3,12 @@
 :root {
   --app-min-width: 360px;
   --titlebar-height: 36px;
+  --font-base: 'Poppins', sans-serif;
+}
+
+html,
+body {
+  font-family: var(--font-base);
 }
 
 .app-shell {

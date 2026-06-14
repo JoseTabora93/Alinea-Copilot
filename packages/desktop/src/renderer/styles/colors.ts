@@ -140,29 +140,25 @@ export const diffColors = {
  * Maps common hex values to their theme variable names
  */
 export const colorMapping: Record<string, string> = {
-  // AOU colors
-  '#EFF0F6': 'var(--color-aou-1)',
-  '#eff0f6': 'var(--color-aou-1)',
-  '#E5E7F0': 'var(--color-aou-2-disabled)',
-  '#e5e7f0': 'var(--color-aou-2-disabled)',
-  '#7583B2': 'var(--color-aou-6-brand)',
-  '#7583b2': 'var(--color-aou-6-brand)',
+  // AOU / Brand colors
+  '#F2F3EF': 'var(--color-aou-1)',
+  '#f2f3ef': 'var(--color-aou-1)',
+  '#E5E7DF': 'var(--color-aou-2-disabled)',
+  '#e5e7df': 'var(--color-aou-2-disabled)',
+  '#A6AD95': 'var(--color-aou-6-brand)',
+  '#a6ad95': 'var(--color-aou-6-brand)',
 
   // Background colors
   '#FFFFFF': 'var(--color-bg-0)',
   '#ffffff': 'var(--color-bg-0)',
-  '#F9FAFB': 'var(--color-bg-1)',
-  '#f9fafb': 'var(--color-bg-1)',
-  '#F2F3F5': 'var(--color-bg-2)',
-  '#f2f3f5': 'var(--color-bg-2)',
-  '#E5E6EB': 'var(--color-bg-3)',
-  '#e5e6eb': 'var(--color-bg-3)',
-  '#86909C': 'var(--color-bg-6)',
-  '#86909c': 'var(--color-bg-6)',
-  '#1D2129': 'var(--color-bg-9)',
-  '#1d2129': 'var(--color-bg-9)',
-
-  // Semantic colors
-  '#165DFF': 'var(--color-primary)',
-  '#165dff': 'var(--color-primary)',
+  '#F2F1EC': 'var(--color-bg-1)',
+  '#f2f1ec': 'var(--color-bg-1)',
+  '#E8E7E1': 'var(--color-bg-2)',
+  '#e8e7e1': 'var(--color-bg-2)',
+  '#D8D7D1': 'var(--color-bg-3)',
+  '#d8d7d1': 'var(--color-bg-3)',
+  '#88877F': 'var(--color-bg-6)',
+  '#88877f': 'var(--color-bg-6)',
+  '#282D31': 'var(--color-bg-9)',
+  '#282d31': 'var(--color-bg-9)',
 };
