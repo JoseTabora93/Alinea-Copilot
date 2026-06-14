@@ -4,8 +4,18 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  background: linear-gradient(135deg, #97a0c5 0%, #596590 100%);
+  font-family:
+    'Poppins',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif;
+  /* Brand palette: Verde Sabio → Gris Profundo */
+  background: linear-gradient(135deg, #a6ad95 0%, #282d31 100%);
   overflow: hidden;
 }
 
@@ -119,8 +129,8 @@ body.login-page-active {
 
 .login-page__lang-select:hover,
 .login-page__lang-select:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  border-color: #a6ad95;
+  box-shadow: 0 0 0 3px rgba(166, 173, 149, 0.25);
   outline: none;
 }
 
@@ -158,13 +168,10 @@ body.login-page-active {
 
 .login-page__title {
   font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 600;
+  color: #282d31;
   margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.5px;
 }
 
 .login-page__subtitle {
@@ -217,13 +224,13 @@ body.login-page-active {
 }
 
 .login-page__input:hover {
-  border-color: #667eea;
+  border-color: #a6ad95;
 }
 
 .login-page__input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #a6ad95;
+  box-shadow: 0 0 0 3px rgba(166, 173, 149, 0.2);
 }
 
 .login-page__toggle-password {
@@ -243,7 +250,7 @@ body.login-page-active {
 }
 
 .login-page__toggle-password:hover {
-  color: #667eea;
+  color: #6f7a5e;
 }
 
 .login-page__checkbox {
@@ -258,7 +265,7 @@ body.login-page-active {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #667eea;
+  accent-color: #6f7a5e;
 }
 
 .login-page__checkbox label {
@@ -275,9 +282,9 @@ body.login-page-active {
   font-size: 15px;
   font-weight: 600;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3a4339 0%, #282d31 100%);
   border: none;
-  color: white;
+  color: #f2f3ef;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
@@ -288,7 +295,7 @@ body.login-page-active {
 
 .login-page__submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 24px rgba(166, 173, 149, 0.5);
 }
 
 .login-page__submit:active:not(:disabled) {
