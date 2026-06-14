@@ -327,11 +327,13 @@ const Layout: React.FC<{
                 )}
               >
                 <div
-                  className={classNames('bg-black shrink-0 size-32px relative rd-0.5rem', {
+                  className={classNames('shrink-0 size-32px relative rd-0.5rem', {
                     '!size-24px': collapsed,
                   })}
+                  style={{ backgroundColor: '#282d31' }}
                   onClick={onClick}
                 >
+                  {/* Alinea "A" monogram — matches the login emblem */}
                   <svg
                     className={classNames('w-5.5 h-5.5 absolute inset-0 m-auto', {
                       'scale-140': !collapsed,
@@ -341,21 +343,27 @@ const Layout: React.FC<{
                   >
                     <path
                       key='logo-path-1'
-                      d='M40 20 Q38 22 25 40 Q23 42 26 42 L30 42 Q32 40 40 30 Q48 40 50 42 L54 42 Q57 42 55 40 Q42 22 40 20'
-                      fill='white'
-                    ></path>
-                    <circle key='logo-circle' cx='40' cy='46' r='3' fill='white'></circle>
-                    <path
-                      key='logo-path-2'
-                      d='M18 50 Q40 70 62 50'
-                      stroke='white'
-                      strokeWidth='3.5'
-                      fill='none'
+                      d='M28 56 L40 24 L52 56'
+                      stroke='#a6ad95'
+                      strokeWidth='5.5'
                       strokeLinecap='round'
+                      strokeLinejoin='round'
+                      fill='none'
                     ></path>
+                    <line
+                      key='logo-bar'
+                      x1='34'
+                      y1='47'
+                      x2='46'
+                      y2='47'
+                      stroke='#a6ad95'
+                      strokeWidth='5.5'
+                      strokeLinecap='round'
+                    ></line>
+                    <rect key='logo-dot' x='55' y='17' width='7' height='7' rx='1.6' fill='#a6ad95'></rect>
                   </svg>
                 </div>
-                <div className='text-16px text-t-primary collapsed-hidden font-semibold'>AionUi</div>
+                <div className='text-16px text-t-primary collapsed-hidden font-semibold'>Alinea Copiloto</div>
                 {isMobile && !collapsed && (
                   <button
                     type='button'
