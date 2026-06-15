@@ -2,5 +2,7 @@
   "selectFile": "选择文件",
   "selectDirectory": "选择目录",
   "pleaseSelectFile": "请选择一个文件",
-  "pleaseSelectDirectory": "请选择一个目录"
+  "pleaseSelectDirectory": "请选择一个目录",
+  "newFolder": "新建文件夹",
+  "newFolderPlaceholder": "新文件夹名称"
 }

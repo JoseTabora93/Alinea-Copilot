@@ -30,6 +30,23 @@ const isModelKeyAvailable = (key: string | null, providers?: IProvider[]) => {
   });
 };
 
+/**
+ * Product default model preference: Claude Sonnet 4.x (e.g. claude-sonnet-4.6).
+ * Matches common slug variants across providers (OpenRouter: anthropic/claude-sonnet-4*).
+ */
+const PREFERRED_DEFAULT_MODEL_PATTERN = /claude[-\s/]*sonnet[-\s]*4/i;
+
+function pickPreferredDefaultModel(modelList: IProvider[]): { provider: IProvider; use_model: string } | null {
+  for (const provider of modelList) {
+    const match = (provider.models || []).find((modelName) => {
+      const enabled = provider.model_enabled?.[modelName] !== false;
+      return enabled && PREFERRED_DEFAULT_MODEL_PATTERN.test(modelName);
+    });
+    if (match) return { provider, use_model: match };
+  }
+  return null;
+}
+
 /** Provider-based agent keys that share the model list UI */
 type ProviderAgentKey = 'aionrs';
 
@@ -112,8 +129,15 @@ export const useGuidModelSelection = (agentKey: ProviderAgentKey = 'aionrs'): Gu
         defaultModel = modelList.find((m) => m.models.includes(savedModel)) || modelList[0];
         resolvedUseModel = defaultModel?.models.includes(savedModel) ? savedModel : (defaultModel?.models[0] ?? '');
       } else {
-        defaultModel = modelList[0];
-        resolvedUseModel = defaultModel?.models[0] ?? '';
+        // No saved preference: prefer Claude Sonnet 4.x (product default), else first model.
+        const preferred = pickPreferredDefaultModel(modelList);
+        if (preferred) {
+          defaultModel = preferred.provider;
+          resolvedUseModel = preferred.use_model;
+        } else {
+          defaultModel = modelList[0];
+          resolvedUseModel = defaultModel?.models[0] ?? '';
+        }
       }
 
       if (!defaultModel || !resolvedUseModel) return;

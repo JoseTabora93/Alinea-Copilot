@@ -7,6 +7,7 @@
   "autoSwitchedAgent": "{{from}} is not available, switched to {{to}}",
   "promptExamplesHint": "Try example prompts:",
   "selectAssistantHint": "Select an assistant to start a task",
+  "advancedAgent": "Advanced",
   "agentSwitcherLabel": "Agent",
   "switchedToAgent": "Switched to {{agent}}",
   "workspace": {

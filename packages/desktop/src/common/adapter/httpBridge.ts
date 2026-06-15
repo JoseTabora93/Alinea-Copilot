@@ -10,6 +10,8 @@
 // Base URL
 // ---------------------------------------------------------------------------
 
+import { CSRF_COOKIE_NAME } from '@/common/config/constants';
+
 declare global {
   interface Window {
     __backendPort?: number;
@@ -185,7 +187,7 @@ export async function httpRequest<T>(
 
   // CSRF double-submit: the Core requires x-csrf-token in remote (multi-user) mode.
   if (typeof document !== 'undefined') {
-    const CSRF_PREFIX = 'aionui-csrf-token=';
+    const CSRF_PREFIX = `${CSRF_COOKIE_NAME}=`;
     const csrfPair = document.cookie.split('; ').find((c) => c.startsWith(CSRF_PREFIX));
     if (csrfPair) headers['x-csrf-token'] = decodeURIComponent(csrfPair.slice(CSRF_PREFIX.length));
   }
