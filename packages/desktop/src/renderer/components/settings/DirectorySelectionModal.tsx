@@ -9,12 +9,13 @@ import { IconFile, IconFolder, IconFolderAdd, IconUp } from '@arco-design/web-re
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBaseUrl } from '@/common/adapter/httpBridge';
+import { CSRF_COOKIE_NAME } from '@/common/config/constants';
 import { stripWindowsVerbatimPrefix } from '@/renderer/utils/file/fileSelection';
 
 /** Read the CSRF double-submit token the Core requires for mutations in remote mode. */
 function readCsrfToken(): string | null {
   if (typeof document === 'undefined') return null;
-  const prefix = 'aionui-csrf-token=';
+  const prefix = `${CSRF_COOKIE_NAME}=`;
   const pair = document.cookie.split('; ').find((c) => c.startsWith(prefix));
   return pair ? decodeURIComponent(pair.slice(prefix.length)) : null;
 }

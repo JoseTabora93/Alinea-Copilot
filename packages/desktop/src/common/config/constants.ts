@@ -17,6 +17,18 @@ export const AIONUI_TIMESTAMP_SEPARATOR = '_aionui_';
 export const AIONUI_TIMESTAMP_REGEX = /_aionui_\d{13}(\.\w+)?$/;
 export const AIONUI_FILES_MARKER = '[[AION_FILES]]';
 
+// ===== Auth / CSRF =====
+
+/**
+ * Name of the CSRF double-submit cookie the Core sets. The frontend reads it and
+ * echoes the value back as the `x-csrf-token` header on mutating requests.
+ *
+ * NOTE: this is a backend contract — do NOT rename it here unless the Core is
+ * updated to set the cookie under the new name, or CSRF validation will fail
+ * with 403. Pending: coordinate a brand-aligned cookie name with the Core.
+ */
+export const CSRF_COOKIE_NAME = 'aionui-csrf-token';
+
 // ===== 媒体类型相关常量 =====
 
 /** 支持的图片文件扩展名 */
