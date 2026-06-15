@@ -69,6 +69,8 @@
   "saveAssistant": "保存设置",
   "createAssistant": "创建助手",
   "assistantsListDescription": "通过组合 AI 代理、自定义规则和技能来构建面向特定任务的助手。",
+  "assistantShowHidden": "在选择器中显示已隐藏的助手",
+  "assistantHiddenTag": "已隐藏",
   "assistantFilterAll": "全部",
   "assistantFilterBuiltin": "系统",
   "assistantFilterCustom": "自定义",
