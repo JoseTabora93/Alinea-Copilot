@@ -10,26 +10,35 @@
     monospace;
   --code-font-size: 13px;
   --aion-overlay-bg: #ffffff;
-  --aion-overlay-text: #1d2129;
-  --aion-overlay-border: #e5e6eb;
+  --aion-overlay-text: #1a1f17;
+  --aion-overlay-border: #d8d7d1;
   --aion-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme='dark'],
 body[arco-theme='dark'] {
-  --aion-overlay-bg: #0e0e0e;
-  --aion-overlay-text: #f2f3f5;
-  --aion-overlay-border: #333333;
+  --aion-overlay-bg: #282d31;
+  --aion-overlay-text: #f2f3ef;
+  --aion-overlay-border: #3f464e;
   --aion-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
-/* Arco's arco.css puts 'Inter' first in font-family, which causes very thin
-   text on systems that have Inter installed. Override to use system fonts. */
+/* Override Arco's default font to use Alinea brand font (Poppins) */
 html,
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    'Poppins',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 html body .arco-tooltip-content,
@@ -140,23 +149,23 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
 }
 
 /* AionUi Steps wrapper styles */
-.aionui-steps .arco-steps-item-process .arco-steps-item-icon {
+.alinea-steps .arco-steps-item-process .arco-steps-item-icon {
   background-color: var(--aou-6-brand) !important;
   border-color: var(--aou-6-brand) !important;
 }
 
-.aionui-steps .arco-steps-item-finish .arco-steps-item-icon {
+.alinea-steps .arco-steps-item-finish .arco-steps-item-icon {
   background-color: #e8f3ff !important;
   border-color: #e8f3ff !important;
   border-radius: 50% !important;
 }
 
-.aionui-steps .arco-steps-item-finish .arco-steps-item-icon .arco-steps-icon {
+.alinea-steps .arco-steps-item-finish .arco-steps-item-icon .arco-steps-icon {
   line-height: 28px !important;
 }
 
 /* AionUi Modal wrapper styles */
-.aionui-modal .arco-modal-content {
+.alinea-modal .arco-modal-content {
   background: var(--dialog-fill-0) !important;
   border: 1px solid var(--border-base) !important;
   border-radius: 16px !important;
@@ -271,21 +280,21 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
   border-color: var(--bg-4) !important;
 }
 
-.aionui-modal-header {
+.alinea-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px 16px;
 }
 
-.aionui-modal-title {
+.alinea-modal-title {
   font-size: 18px;
   font-weight: 500;
   color: var(--text-primary);
   margin: 0;
 }
 
-.aionui-modal-close-btn {
+.alinea-modal-close-btn {
   width: 32px;
   height: 32px;
   display: flex;
@@ -299,7 +308,7 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
   padding: 0;
 }
 
-.aionui-modal-close-btn:hover {
+.alinea-modal-close-btn:hover {
   background: var(--color-fill-1);
 }
 
@@ -486,9 +495,9 @@ body[arco-theme='dark'] .arco-message-error {
  * `.arco-dropdown-menu` root, which is also the `overflow:auto` scroll box),
  * not the `.arco-menu-*` one — so we target the dropdown variant here.
  *
- * Scoped to `.aion-model-menu--sticky-group` so it never affects other menus
+ * Scoped to `.alinea-model-menu--sticky-group` so it never affects other menus
  * that group items (e.g. the agent mode switcher). */
-.aion-model-menu--sticky-group .arco-dropdown-menu-group-title {
+.alinea-model-menu--sticky-group .arco-dropdown-menu-group-title {
   position: sticky;
   /* `.arco-dropdown-menu` has `padding: 4px 0`, so `top: 0` pins the title 4px
    * below the scroll-box edge, leaving a strip where the previous item shows
@@ -513,7 +522,7 @@ body[arco-theme='dark'] .arco-message-error {
  * rule (3 classes) out-specifies the 2-class reset above, so the first group's
  * 4px margin-top survives and leaves a transparent strip at the very top. Match
  * its specificity to override it; shift the separation into padding instead. */
-.aion-model-menu--sticky-group .arco-dropdown-menu-group:first-child .arco-dropdown-menu-group-title {
+.alinea-model-menu--sticky-group .arco-dropdown-menu-group:first-child .arco-dropdown-menu-group-title {
   margin-top: 0;
   padding-top: 4px;
 }

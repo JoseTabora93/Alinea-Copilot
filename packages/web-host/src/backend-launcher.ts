@@ -558,7 +558,9 @@ export class BackendLifecycleManager {
     const args = buildSpawnArgs({
       port: this._port,
       dbPath,
-      local: true,
+      // With AIONUI_MULTIUSER=1 the server starts aioncore WITHOUT --local, enabling
+      // real multi-user auth. Without the env (desktop) it stays local/trusted.
+      local: process.env.AIONUI_MULTIUSER !== '1',
       parentPid: process.pid,
       logDir,
       workDir: dirs?.workDir,

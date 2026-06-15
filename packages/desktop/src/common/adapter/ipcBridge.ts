@@ -14,6 +14,7 @@
 
 import type { IConfirmation } from '@/common/chat/chatLib';
 import type { AcpSlashCommandApiItem } from '@/common/chat/slash/types';
+import type { IAdminCreateUserRequest, IAdminUpdateUserRequest, IAdminUser } from '@/common/types/admin/userTypes';
 import { bridge } from '@office-ai/platform';
 import type { OpenDialogOptions } from 'electron';
 import type {
@@ -1239,6 +1240,28 @@ export const webui = {
   })),
   resetPassword: httpPost<{ new_password: string }, void>('/api/webui/reset-password'),
   generateQRToken: httpPost<{ token: string; expires_at_ms: number }, void>('/api/webui/generate-qr-token'),
+};
+
+// ---------------------------------------------------------------------------
+// Admin — multi-user management, routed to /api/admin/*
+// (admin-only; backend enforces require_admin middleware)
+// ---------------------------------------------------------------------------
+
+export const admin = {
+  listUsers: httpGet<IAdminUser[], void>('/api/admin/users'),
+  createUser: httpPost<IAdminUser, IAdminCreateUserRequest>('/api/admin/users'),
+  updateUser: httpPatch<void, { id: string } & IAdminUpdateUserRequest>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}`,
+    (p) => {
+      const { id: _id, ...body } = p;
+      return body;
+    }
+  ),
+  resetPassword: httpPost<void, { id: string; new_password: string }>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}/reset-password`,
+    (p) => ({ new_password: p.new_password })
+  ),
+  deleteUser: httpDelete<void, { id: string }>((p) => `/api/admin/users/${encodeURIComponent(p.id)}`),
 };
 
 // ---------------------------------------------------------------------------

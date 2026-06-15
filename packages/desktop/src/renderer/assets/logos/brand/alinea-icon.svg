@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Alinea Copiloto">
+  <rect x="0.5" y="0.5" width="63" height="63" rx="15" fill="#ffffff" stroke="#eceae3" />
+  <!-- Two-stroke "A": left leg Gris Profundo, right leg Verde Sabio, with a centered dot -->
+  <path d="M21 47 L31 20" stroke="#2f353a" stroke-width="5.6" stroke-linecap="round" fill="none" />
+  <path d="M33 20 L43 47" stroke="#a6ad95" stroke-width="5.6" stroke-linecap="round" fill="none" />
+  <circle cx="32" cy="40.5" r="3.4" fill="#a6ad95" />
+</svg>

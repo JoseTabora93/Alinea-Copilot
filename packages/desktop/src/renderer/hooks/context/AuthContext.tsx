@@ -10,6 +10,10 @@ type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
 export interface AuthUser {
   id: string;
   username: string;
+  /** 'admin' | 'member' — present in WebUI multi-user mode; absent on legacy/desktop responses. */
+  role?: string;
+  is_active?: boolean;
+  display_name?: string | null;
 }
 
 interface LoginParams {

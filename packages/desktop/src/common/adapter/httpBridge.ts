@@ -183,6 +183,13 @@ export async function httpRequest<T>(
     headers['Content-Type'] = 'application/json';
   }
 
+  // CSRF double-submit: the Core requires x-csrf-token in remote (multi-user) mode.
+  if (typeof document !== 'undefined') {
+    const CSRF_PREFIX = 'aionui-csrf-token=';
+    const csrfPair = document.cookie.split('; ').find((c) => c.startsWith(CSRF_PREFIX));
+    if (csrfPair) headers['x-csrf-token'] = decodeURIComponent(csrfPair.slice(CSRF_PREFIX.length));
+  }
+
   console.debug(
     `[httpBridge] ${method} ${path}`,
     body !== undefined ? JSON.stringify(redactForLog(body)).slice(0, 500) : '(no body)'

@@ -378,13 +378,13 @@ const AionModal: React.FC<AionModalProps> = ({
       closable={false}
       footer={null}
       onCancel={onCancel}
-      className={`aionui-modal ${className}`}
+      className={`alinea-modal ${className}`}
       style={finalStyle}
       getPopupContainer={() => document.body}
     >
-      <div className='aionui-modal-wrapper' style={{ borderRadius: borderRadiusVal }}>
+      <div className='alinea-modal-wrapper' style={{ borderRadius: borderRadiusVal }}>
         {renderHeader()}
-        <div className='aionui-modal-body-content' style={bodyInlineStyle}>
+        <div className='alinea-modal-body-content' style={bodyInlineStyle}>
           {children}
         </div>
         {renderFooter()}
