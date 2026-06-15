@@ -5,6 +5,7 @@
  */
 
 import { CUSTOM_AVATAR_IMAGE_MAP } from '../constants';
+import OpenClawAgentSpace from './OpenClawAgentSpace';
 import styles from '../index.module.css';
 import type { AvailableAgent, EffectiveAgentInfo } from '../types';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
@@ -201,6 +202,12 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
   // Assistant List View
   return (
     <div className='mt-32px w-full'>
+      <OpenClawAgentSpace
+        onPick={(prompt) => {
+          onSetInput(prompt);
+          onFocusInput();
+        }}
+      />
       <div className={`${styles.assistantPromptHint} text-center mb-12px`}>
         {t('guid.selectAssistantHint', { defaultValue: 'Select an assistant to start a task' })}
       </div>
