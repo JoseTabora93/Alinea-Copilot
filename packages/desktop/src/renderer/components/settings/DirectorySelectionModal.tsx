@@ -4,12 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Button, Modal, Spin } from '@arco-design/web-react';
-import { IconFile, IconFolder, IconUp } from '@arco-design/web-react/icon';
+import { Button, Input, Modal, Spin } from '@arco-design/web-react';
+import { IconFile, IconFolder, IconFolderAdd, IconUp } from '@arco-design/web-react/icon';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBaseUrl } from '@/common/adapter/httpBridge';
 import { stripWindowsVerbatimPrefix } from '@/renderer/utils/file/fileSelection';
+
+/** Read the CSRF double-submit token the Core requires for mutations in remote mode. */
+function readCsrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const prefix = 'aionui-csrf-token=';
+  const pair = document.cookie.split('; ').find((c) => c.startsWith(prefix));
+  return pair ? decodeURIComponent(pair.slice(prefix.length)) : null;
+}
 
 interface DirectoryItem {
   name: string;
@@ -43,6 +51,9 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [currentPath, setCurrentPath] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [newFolderMode, setNewFolderMode] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
 
   const loadDirectory = useCallback(
     async (dirPath = '') => {
@@ -72,14 +83,16 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
         // Older backends return Windows verbatim paths (`\\?\C:\DEV`), which
         // break agent spawning when stored as a workspace (issue #3191).
         // 旧版后端会返回 `\\?\` 前缀的 Windows 路径，存为工作区后会导致 agent 启动失败。
+        // Accept both camelCase (legacy backend) and snake_case (per-user scoped Core).
+        const rawParentPath = data.parent_path ?? data.parentPath;
         const normalized: DirectoryData = {
           ...data,
           items: (data.items as DirectoryItem[]).map((item) => ({
             ...item,
             path: stripWindowsVerbatimPrefix(item.path),
           })),
-          parentPath:
-            typeof data.parentPath === 'string' ? stripWindowsVerbatimPrefix(data.parentPath) : data.parentPath,
+          canGoUp: (data.can_go_up ?? data.canGoUp) === true,
+          parentPath: typeof rawParentPath === 'string' ? stripWindowsVerbatimPrefix(rawParentPath) : rawParentPath,
         };
         setDirectoryData(normalized);
         setCurrentPath(dirPath);
@@ -96,9 +109,45 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
   useEffect(() => {
     if (visible) {
       setSelectedPath('');
+      setNewFolderMode(false);
+      setNewFolderName('');
+      // Open at the user's root: the Core maps an empty path to /data/users/<id>/.
       loadDirectory('').catch((error) => console.error('Failed to load initial directory:', error));
     }
   }, [visible, loadDirectory]);
+
+  const handleCreateFolder = async () => {
+    const name = newFolderName.trim();
+    if (!name) return;
+    setCreatingFolder(true);
+    setError(null);
+    try {
+      const sep = currentPath.includes('\\') ? '\\' : '/';
+      const target = currentPath ? `${currentPath.replace(/[\\/]+$/, '')}${sep}${name}` : name;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const csrf = readCsrfToken();
+      if (csrf) headers['x-csrf-token'] = csrf;
+      const response = await fetch(`${getBaseUrl()}/api/fs/mkdir`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ path: target }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        setError(errorData.error || `HTTP ${response.status}`);
+        return;
+      }
+      setNewFolderMode(false);
+      setNewFolderName('');
+      await loadDirectory(currentPath);
+    } catch (err) {
+      console.error('Failed to create folder:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create folder');
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
 
   const handleItemClick = (item: DirectoryItem) => {
     if (item.isDirectory) {
@@ -168,6 +217,43 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
         </div>
       }
     >
+      <div className='w-full flex items-center justify-end mb-8px gap-8px'>
+        {newFolderMode ? (
+          <div className='flex items-center gap-8px flex-1'>
+            <Input
+              autoFocus
+              size='small'
+              value={newFolderName}
+              onChange={setNewFolderName}
+              onPressEnter={() => void handleCreateFolder()}
+              placeholder={t('fileSelection.newFolderPlaceholder', { defaultValue: 'New folder name' })}
+              maxLength={120}
+            />
+            <Button
+              type='primary'
+              size='small'
+              loading={creatingFolder}
+              disabled={!newFolderName.trim()}
+              onClick={() => void handleCreateFolder()}
+            >
+              {t('common.create', { defaultValue: 'Create' })}
+            </Button>
+            <Button
+              size='small'
+              onClick={() => {
+                setNewFolderMode(false);
+                setNewFolderName('');
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+          </div>
+        ) : (
+          <Button size='small' icon={<IconFolderAdd />} onClick={() => setNewFolderMode(true)}>
+            {t('fileSelection.newFolder', { defaultValue: 'New folder' })}
+          </Button>
+        )}
+      </div>
       <Spin loading={loading} className='w-full'>
         <div className='w-full border border-b-base rd-4px overflow-hidden' style={{ height: 'min(400px, 60vh)' }}>
           <div className='h-full overflow-y-auto'>

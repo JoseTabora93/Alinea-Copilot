@@ -52,6 +52,9 @@ const GuidPage: React.FC = () => {
 
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  // Aion CLI is de-emphasized: when it's the only engine, hide the pill bar (the
+  // model selector is the primary control) behind an opt-in "Advanced" reveal.
+  const [showAgentBar, setShowAgentBar] = useState(false);
 
   // Open external link
   const openLink = useCallback(async (url: string) => {
@@ -822,7 +825,7 @@ const GuidPage: React.FC = () => {
             ) : null
           ) : agentSelection.availableAgents === undefined ? (
             <AgentPillBarSkeleton />
-          ) : agentSelection.availableAgents.length > 0 ? (
+          ) : agentSelection.availableAgents.length > 1 || showAgentBar ? (
             <AgentPillBar
               availableAgents={agentSelection.availableAgents}
               selectedAgentKey={agentSelection.selectedAgentKey}
@@ -830,6 +833,18 @@ const GuidPage: React.FC = () => {
               onSelectAgent={handleSelectAgentFromPillBar}
               suppressSelectionAnimation={resetAssistantRequested}
             />
+          ) : agentSelection.availableAgents.length === 1 ? (
+            // Single engine (Aion CLI): keep it selected under the hood but
+            // de-emphasize it — users pick a model, not the CLI.
+            <div className='flex justify-center'>
+              <button
+                type='button'
+                className='text-12px text-t-tertiary hover:text-t-secondary bg-transparent border-0 cursor-pointer px-8px py-4px'
+                onClick={() => setShowAgentBar(true)}
+              >
+                {t('guid.advancedAgent', { defaultValue: 'Advanced' })}
+              </button>
+            </div>
           ) : null}
 
           <GuidInputCard
