@@ -69,6 +69,8 @@
   "saveAssistant": "Save Settings",
   "createAssistant": "Create Assistant",
   "assistantsListDescription": "Build task-specific assistants by combining an AI agent with custom rules and skills.",
+  "assistantShowHidden": "Show hidden assistants in the selector",
+  "assistantHiddenTag": "Hidden",
   "assistantFilterAll": "All",
   "assistantFilterBuiltin": "System",
   "assistantFilterCustom": "Custom",

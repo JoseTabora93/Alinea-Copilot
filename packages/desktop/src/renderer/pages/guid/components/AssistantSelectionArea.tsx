@@ -13,6 +13,8 @@ import { Message } from '@arco-design/web-react';
 import { Plus, Robot } from '@icon-park/react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { resolveExtensionAssetUrl } from '@/renderer/utils/platform';
+import { isAssistantHiddenByDefault } from '@/common/config/assistantCuration';
+import { useShowHiddenAssistants } from '@/renderer/hooks/assistant/useShowHiddenAssistants';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -58,6 +60,7 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [agentMessage, agentMessageContext] = Message.useMessage({ maxCount: 10 });
+  const [showHiddenAssistants] = useShowHiddenAssistants();
 
   const resolveOpenAssistantId = (): string | null => {
     if (selectedAgentInfo?.custom_agent_id) return selectedAgentInfo.custom_agent_id;
@@ -207,7 +210,7 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
       >
         <div className={styles.assistantCardGrid}>
           {assistants
-            .filter((a) => a.enabled !== false)
+            .filter((a) => a.enabled !== false && (showHiddenAssistants || !isAssistantHiddenByDefault(a.id)))
             .map((assistant) => {
               const avatarValue = assistant.avatar?.trim();
               const mappedAvatar = avatarValue ? CUSTOM_AVATAR_IMAGE_MAP[avatarValue] : undefined;
