@@ -14,8 +14,11 @@
     Arial,
     'Noto Sans',
     sans-serif;
-  /* Brand palette: Verde Sabio → Gris Profundo */
-  background: linear-gradient(135deg, #a6ad95 0%, #282d31 100%);
+  /* Brand watermark pattern on warm off-white */
+  background-color: #f2f1ec;
+  background-image: url('../../assets/logos/brand/alinea-pattern.svg');
+  background-size: 84px 72px;
+  background-repeat: repeat;
   overflow: hidden;
 }
 

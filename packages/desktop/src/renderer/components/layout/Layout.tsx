@@ -330,37 +330,34 @@ const Layout: React.FC<{
                   className={classNames('shrink-0 size-32px relative rd-0.5rem', {
                     '!size-24px': collapsed,
                   })}
-                  style={{ backgroundColor: '#282d31' }}
+                  style={{ backgroundColor: '#ffffff', border: '1px solid #eceae3' }}
                   onClick={onClick}
                 >
-                  {/* Alinea "A" monogram — matches the login emblem */}
+                  {/* Alinea two-tone "A" mark — matches the app icon and login emblem */}
                   <svg
                     className={classNames('w-5.5 h-5.5 absolute inset-0 m-auto', {
-                      'scale-140': !collapsed,
+                      'scale-130': !collapsed,
                     })}
                     viewBox='0 0 80 80'
                     fill='none'
                   >
                     <path
                       key='logo-path-1'
-                      d='M28 56 L40 24 L52 56'
-                      stroke='#a6ad95'
-                      strokeWidth='5.5'
+                      d='M26 58 L38 24'
+                      stroke='#2f353a'
+                      strokeWidth='7'
                       strokeLinecap='round'
-                      strokeLinejoin='round'
                       fill='none'
                     ></path>
-                    <line
-                      key='logo-bar'
-                      x1='34'
-                      y1='47'
-                      x2='46'
-                      y2='47'
+                    <path
+                      key='logo-path-2'
+                      d='M42 24 L54 58'
                       stroke='#a6ad95'
-                      strokeWidth='5.5'
+                      strokeWidth='7'
                       strokeLinecap='round'
-                    ></line>
-                    <rect key='logo-dot' x='55' y='17' width='7' height='7' rx='1.6' fill='#a6ad95'></rect>
+                      fill='none'
+                    ></path>
+                    <circle key='logo-dot' cx='40' cy='50' r='4.2' fill='#a6ad95'></circle>
                   </svg>
                 </div>
                 <div className='text-16px text-t-primary collapsed-hidden font-semibold'>Alinea Copiloto</div>
