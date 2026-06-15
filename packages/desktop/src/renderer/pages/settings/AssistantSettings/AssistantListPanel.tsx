@@ -13,6 +13,8 @@ import { Button, Switch, Tag } from '@arco-design/web-react';
 import { Drag, Plus } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isAssistantHiddenByDefault } from '@/common/config/assistantCuration';
+import { useShowHiddenAssistants } from '@/renderer/hooks/assistant/useShowHiddenAssistants';
 
 type AssistantListPanelProps = {
   assistants: AssistantListItem[];
@@ -108,7 +110,18 @@ const SortableAssistantCard: React.FC<SortableAssistantCardProps> = ({
         <div className='min-w-0 flex-1'>
           <div className='flex min-w-0 items-center gap-8px font-medium text-t-primary'>
             <span className='truncate'>{assistant.name_i18n?.[localeKey] || assistant.name}</span>
-            <div className='flex flex-shrink-0 items-center gap-6px'>{renderSourceTag(assistant)}</div>
+            <div className='flex flex-shrink-0 items-center gap-6px'>
+              {renderSourceTag(assistant)}
+              {isAssistantHiddenByDefault(assistant.id) ? (
+                <Tag
+                  size='small'
+                  bordered={false}
+                  className='!rounded-10px !bg-fill-1 !px-8px !py-1px !text-10px !font-600 !leading-16px !text-t-tertiary'
+                >
+                  {t('settings.assistantHiddenTag', { defaultValue: 'Hidden' })}
+                </Tag>
+              ) : null}
+            </div>
           </div>
           <div className='truncate text-12px text-t-secondary'>
             {assistant.description_i18n?.[localeKey] || assistant.description || ''}
@@ -187,6 +200,7 @@ const AssistantListPanel: React.FC<AssistantListPanelProps> = ({
   const { t } = useTranslation();
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
+  const [showHidden, setShowHidden] = useShowHiddenAssistants();
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const sensors = useSensors(
@@ -311,6 +325,17 @@ const AssistantListPanel: React.FC<AssistantListPanelProps> = ({
                   defaultValue: 'Manage your assistants, control visibility, and adjust their order.',
                 })}
               </p>
+              <div className='mt-8px flex items-center gap-8px'>
+                <Switch
+                  size='small'
+                  checked={showHidden}
+                  onChange={setShowHidden}
+                  data-testid='switch-show-hidden-assistants'
+                />
+                <span className='text-12px text-t-secondary'>
+                  {t('settings.assistantShowHidden', { defaultValue: 'Show hidden assistants in the selector' })}
+                </span>
+              </div>
             </div>
             <div className={`${isMobile ? 'w-full' : 'flex-shrink-0'}`}>
               <Button

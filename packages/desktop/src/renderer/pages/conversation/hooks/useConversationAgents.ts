@@ -10,6 +10,8 @@ import type { Assistant } from '@/common/types/agent/assistantTypes';
 import { DETECTED_AGENTS_SWR_KEY, fetchDetectedAgents } from '@/renderer/utils/model/agentTypes';
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import { isSupportedNewConversationAgent } from '@/renderer/utils/model/agentTypeSupportPolicy';
+import { isAssistantHiddenByDefault } from '@/common/config/assistantCuration';
+import { useShowHiddenAssistants } from '@/renderer/hooks/assistant/useShowHiddenAssistants';
 
 export type UseConversationAgentsResult = {
   /** Detected execution engines (acp, extension, remote, aionrs, gemini, etc.) */
@@ -30,6 +32,7 @@ export type UseConversationAgentsResult = {
  *   - Preset assistants — from backend `/api/assistants` (merged builtin + user)
  */
 export const useConversationAgents = (): UseConversationAgentsResult => {
+  const [showHiddenAssistants] = useShowHiddenAssistants();
   // Execution engines from AgentRegistry (shared cache with useDetectedAgents / useGuidAgentSelection)
   const {
     data: cliAgents,
@@ -52,9 +55,15 @@ export const useConversationAgents = (): UseConversationAgentsResult => {
     await mutate();
   };
 
+  // Apply the same curation as the home selector: hide entertainment assistants
+  // unless the admin opted to show them.
+  const curatedPresets = (presetAssistants || []).filter(
+    (assistant) => showHiddenAssistants || !isAssistantHiddenByDefault(assistant.id)
+  );
+
   return {
     cliAgents: (cliAgents || []).filter(isSupportedNewConversationAgent),
-    presetAssistants: presetAssistants || [],
+    presetAssistants: curatedPresets,
     isLoading: isLoadingAgents || isLoadingPresets,
     refresh,
   };
