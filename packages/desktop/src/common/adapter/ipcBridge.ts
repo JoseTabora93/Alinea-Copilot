@@ -1261,6 +1261,7 @@ export const admin = {
     (p) => `/api/admin/users/${encodeURIComponent(p.id)}/reset-password`,
     (p) => ({ new_password: p.new_password })
   ),
+  deleteUser: httpDelete<void, { id: string }>((p) => `/api/admin/users/${encodeURIComponent(p.id)}`),
 };
 
 // ---------------------------------------------------------------------------

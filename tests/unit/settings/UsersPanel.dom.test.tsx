@@ -9,11 +9,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { IAdminUser } from '@/common/types/admin/userTypes';
 
-const { listMock, createMock, updateMock, resetMock } = vi.hoisted(() => ({
+const { listMock, createMock, updateMock, resetMock, deleteMock } = vi.hoisted(() => ({
   listMock: vi.fn(),
   createMock: vi.fn(),
   updateMock: vi.fn(),
   resetMock: vi.fn(),
+  deleteMock: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -42,6 +43,7 @@ vi.mock('@/common', () => ({
       createUser: { invoke: createMock },
       updateUser: { invoke: updateMock },
       resetPassword: { invoke: resetMock },
+      deleteUser: { invoke: deleteMock },
     },
   },
 }));

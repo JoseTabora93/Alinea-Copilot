@@ -41,12 +41,14 @@ function formatLastLogin(value: IAdminUser['last_login']): string | null {
 const UsersPanel: React.FC = () => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
-  const { users, loading, error, reload, createUser, updateUser, resetPassword } = useAdminUsers();
+  const { users, loading, error, reload, createUser, updateUser, resetPassword, deleteUser } = useAdminUsers();
 
   const [inviteVisible, setInviteVisible] = useState(false);
   const [reveal, setReveal] = useState<RevealState | null>(null);
   const [resetTarget, setResetTarget] = useState<IAdminUser | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<IAdminUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const setPending = (id: string, pending: boolean) => {
@@ -105,6 +107,21 @@ const UsersPanel: React.FC = () => {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const record = deleteTarget;
+    setDeleting(true);
+    try {
+      await deleteUser(record.id);
+      setDeleteTarget(null);
+      Message.success(t('settings.users.deletedMsg'));
+    } catch (err) {
+      Message.error(err instanceof Error ? err.message : t('settings.users.deleteFailed'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const renderActions = (record: IAdminUser) => {
     const isSelf = record.id === currentUser?.id;
     const busy = pendingIds.has(record.id);
@@ -112,6 +129,8 @@ const UsersPanel: React.FC = () => {
     // deactivate their own account nor demote their own admin role.
     const disableDeactivate = isSelf && record.is_active;
     const disableDemote = isSelf && record.role === 'admin';
+    // The current admin and the seeded system account cannot be deleted.
+    const disableDelete = isSelf || record.id === 'system_default_user';
 
     const droplist = (
       <Menu>
@@ -133,6 +152,15 @@ const UsersPanel: React.FC = () => {
         </Menu.Item>
         <Menu.Item key='reset-password' disabled={busy} onClick={() => setResetTarget(record)}>
           {t('settings.users.resetPassword')}
+        </Menu.Item>
+        <Menu.Item
+          key='delete'
+          disabled={busy || disableDelete}
+          title={disableDelete ? t('settings.users.selfDeleteHint') : undefined}
+          className='text-danger'
+          onClick={() => setDeleteTarget(record)}
+        >
+          {t('settings.users.actionDelete')}
         </Menu.Item>
       </Menu>
     );
@@ -286,6 +314,41 @@ const UsersPanel: React.FC = () => {
       >
         <p className='text-14px text-t-secondary m-0'>
           {resetTarget ? t('settings.users.resetConfirmContent', { username: resetTarget.username }) : ''}
+        </p>
+      </AionModal>
+
+      <AionModal
+        visible={Boolean(deleteTarget)}
+        onCancel={() => (deleting ? undefined : setDeleteTarget(null))}
+        maskClosable={false}
+        style={{ width: 440, borderRadius: 16 }}
+        contentStyle={{ background: 'var(--dialog-fill-0)', borderRadius: 16, padding: '20px 24px 16px' }}
+        header={{ title: t('settings.users.deleteConfirmTitle'), showClose: true }}
+        footer={
+          <div className='flex justify-end gap-10px mt-10px'>
+            <Button
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+              className='px-20px min-w-80px'
+              style={{ borderRadius: 8 }}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              type='primary'
+              status='danger'
+              loading={deleting}
+              onClick={() => void handleConfirmDelete()}
+              className='px-20px min-w-80px'
+              style={{ borderRadius: 8 }}
+            >
+              {t('settings.users.deleteConfirmOk')}
+            </Button>
+          </div>
+        }
+      >
+        <p className='text-14px text-t-secondary m-0'>
+          {deleteTarget ? t('settings.users.deleteConfirmContent', { username: deleteTarget.username }) : ''}
         </p>
       </AionModal>
 

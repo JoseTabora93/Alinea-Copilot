@@ -16,6 +16,7 @@ interface UseAdminUsersResult {
   createUser: (req: IAdminCreateUserRequest) => Promise<IAdminUser>;
   updateUser: (id: string, updates: IAdminUpdateUserRequest) => Promise<void>;
   resetPassword: (id: string, newPassword: string) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
 }
 
 /**
@@ -75,5 +76,13 @@ export function useAdminUsers(): UseAdminUsersResult {
     await ipcBridge.admin.resetPassword.invoke({ id, new_password: newPassword });
   }, []);
 
-  return { users, loading, error, reload, createUser, updateUser, resetPassword };
+  const deleteUser = useCallback(
+    async (id: string) => {
+      await ipcBridge.admin.deleteUser.invoke({ id });
+      await reload();
+    },
+    [reload]
+  );
+
+  return { users, loading, error, reload, createUser, updateUser, resetPassword, deleteUser };
 }
