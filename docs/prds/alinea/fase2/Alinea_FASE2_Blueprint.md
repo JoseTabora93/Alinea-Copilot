@@ -299,6 +299,10 @@ Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no t
 
 No es solo chat. Mapa de módulos (todos **role-gated** por §5.2):
 
+> **Glosario (no confundir):**
+> - **Agent space** = zona **cara al usuario** en el **Home** para **usar/chatear** con un agente (ej. el bloque "OpenClaw · Copilot Claw" con las 6 tarjetas, que **ya existe**). El "agent space de Hermes" es lo mismo pero para **hablar con Hermes**.
+> - **Command Center** = panel **cara al admin** en **Settings** para **administrar** los agentes/gateways (estado/salud, aprobar devices, aprobar fixes de Hermes, uso, logs). Ahí **no se chatea**, se gestiona.
+
 | Módulo | Ruta | Qué hace | Quién |
 |---|---|---|---|
 | **Home / Chat** | `/guid` | Chat + 3 agent spaces: **Copilot**, **OpenClaw** (6 cat.), **Hermes**. Selector de modelo + override económico/máxima. | Todos |
