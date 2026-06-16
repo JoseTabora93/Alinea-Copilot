@@ -261,6 +261,13 @@ Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no t
 ## 11. Knowledge / Tareas / Notificaciones — Huly (humano) + RAG (agentes)
 
 - **Huly self-host** (≈16 GB): capa **humana** (proyectos, tareas, chat, **notificaciones**, docs).
+
+**Rol final de Huly (cómo queda):** Huly **NO** reemplaza a Alinea ni se "fusiona" en su UI. Queda como la **capa humana de colaboración/PM** (tipo Jira+Notion para personas), corriendo como servicio aparte en el VPS. **Alinea sigue siendo la capa IA** (chat, agentes, correo agéntico, DXF, command center, consumos). Se unen por **3 puentes**:
+1. **Proyecto = 1:1**: un "Proyecto" de Alinea (contenedor de contexto IA: docs+chats+RAG, §10) **mapea a un proyecto de Huly**. En Huly lo gestionas como humano (tareas, board); en Alinea lo usas como contexto para la IA. Conceptualmente es **un solo** proyecto.
+2. **Tareas viven en Huly** (no rebuildeamos un PM): el módulo `/tasks` de Alinea **embebe/enlaza** Huly; la IA crea/lee tareas vía API.
+3. **Conocimiento**: los docs humanos viven en Huly; el **RAG del Core los indexa** (con ACL) para que los agentes los vean. La KB3 (normas) vive **solo** en el Core.
+
+> **Decisión/tradeoff a confirmar:** los módulos nativos `Proyectos/Tareas/Conocimiento` (§13) se construyen **delgados y orientados a IA**, apoyándose en Huly para el PM pesado. **Alternativa** (si no quieres el hierro de ~16 GB de Huly): construirlos **nativos** en Alinea y **omitir Huly**. Recomendación: empezar **sin Huly** (módulos nativos ligeros) y sumar Huly cuando el hierro y el SSO estén listos — así Fase D no se bloquea por infra.
 - **SSO (gap):** "login único Alinea→Huly" asume que el Core es **OIDC Provider**, lo cual probablemente **no** es hoy. Decidir: (a) implementar OIDC Provider mínimo en el Core; (b) **IdP dedicado** (Keycloak/Zitadel); (c) arrancar con **provisioning sin SSO** y dejar SSO para después. (b)/(c) reducen riesgo.
 - **KB viva ↔ RAG:** los docs de Huly que los agentes deben ver se **indexan en el RAG del Core** respetando ACL (sync idempotente con webhooks + job). La **KB3 normas** vive solo en el Core.
 - **Embeddings:** elegir modelo (local vs API), **español**, costo (al ledger `system:kb-index`).
@@ -365,3 +372,30 @@ El VPS actual (4 vCPU / 7.6 GB, compartido) **no alcanza** para sumar Huly (~16 
 - **Claude Code:** Core (Rust) estructural (identidad, RBAC 3 ejes, **RAG compuesto**, router, ledger, gateway), skills/MCP de OpenClaw, Hermes (chat + supervisor), integración Zero/Huly, infra del VPS.
 - **Cursor (yo):** **toda la UI** (los 11 módulos de §13: Command Center, Proyectos, Conocimiento, Correo, Tareas, Consumos, DXF, notificaciones, router/override, gating por rol) + PRs acotados del Core.
 - Coordinación por PRs en los 3 repos. **Estos docs son las instrucciones al 100%**; el "cómo + cómo probar" está en `Alinea_FASE2_Guias.md`.
+
+---
+
+## 17. Licenciamiento y comercialización
+
+> ⚠️ No es asesoría legal. Es una evaluación técnica de licencias; antes del lanzamiento comercial, conviene una **revisión legal** rápida (sobre todo Huly/Zero y los ToS de los modelos).
+
+**Conclusión corta:** **Sí, es comercializable**, con dos obligaciones principales (atribución de la base AionUi) y verificar los servicios externos que decidas **distribuir/empotrar** (Huly/Zero).
+
+### 17.1 Lo verificado en este repo (Alinea-Copilot)
+- **Base (AionUi):** **Apache-2.0** (`LICENSE` raíz + `package.json`). Permisiva → **uso comercial permitido**.
+  - **Obligación:** conservar `LICENSE`, los avisos de copyright y `NOTICE` (los headers `Copyright 2025 AionUi`). **Puedes rebrandear** el producto a Alinea, pero **no** quitar la atribución Apache.
+- **Dependencias:** sin licencias copyleft fuertes ni SaaS-restrictivas detectadas (no AGPL/GPL/SSPL/BUSL/Commons Clause/PolyForm/Elastic en los `package.json`). React, Arco, three.js, dxf-parser, etc. son **MIT/permisivas**. Poppins = **SIL OFL** (comercial OK).
+
+### 17.2 Componentes externos a verificar (no están en este repo)
+| Componente | Qué confirmar | Nota |
+|---|---|---|
+| **Huly** | Su licencia exacta (self-host) y condiciones si lo **ofreces como servicio**. | Suele ser copyleft débil (tipo EPL). Correrlo como **servicio aparte** (no empotrado en tu binario) reduce enredo; **distribuirlo/ofrecerlo como SaaS** puede tener condiciones. **Verificar.** |
+| **Zero (mail-0/zero)** | Que sea **MIT** (como asume el blueprint). | Si MIT → comercial OK. **Verificar** la versión que despliegues. |
+| **OpenClaw / Hermes** | Licencia de `Alinea-OpenClaw` y de cualquier base de la que deriven. | Si es código propio → OK. **Verificar** dependencias internas. |
+| **Modelos (z.ai/GLM, MiniMax, Claude, Qwen)** | **ToS comercial** de cada proveedor (vía API). | El uso comercial de salidas suele estar permitido; cumplir políticas de uso, no reventa de API cruda, datos. Qwen self-host tiene su propia licencia. |
+
+### 17.3 Principio para no equivocarse
+- **Permisivas (MIT/Apache/BSD/OFL):** comercializa libre, conserva atribución.
+- **Copyleft débil (EPL/MPL/LGPL):** OK usar/comercializar; si **modificas** esos archivos, comparte esos cambios; **correrlos como servicios aparte** (arm's-length por API/SSO) minimiza obligaciones.
+- **Copyleft fuerte / SaaS-restrictivas (AGPL/SSPL/BUSL/Commons Clause):** las peligrosas para un SaaS comercial. **Ninguna detectada en este repo**; el riesgo, si existe, estaría en Huly/Zero → por eso van como **servicios self-host aparte** y se **verifican**.
+- **Ventaja de la arquitectura:** Huly/Zero/OpenClaw/Hermes corren como **servicios separados** en tu VPS y se hablan por **API/MCP/SSO**, no se **empaquetan** dentro del binario que distribuyes → mucho menor enredo de licencias.
