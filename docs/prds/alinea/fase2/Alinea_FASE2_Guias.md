@@ -93,15 +93,17 @@
 
 ## 6. Hermes — chat + supervisor
 
-**Construir (a) Chat:**
-1. Registrar Hermes como `RemoteAgentConfig` (wss+Ed25519).
-2. **Frontend:** Hermes como **agente seleccionable** (espacio/avatar propios) en el home, junto a Copilot/OpenClaw. Recibe identidad firmada + usa `kb_search` (§3).
+**Construir (a) Chat — Opción A (selector de arriba, ver Blueprint §8.4):**
+1. **Backend (Claude):** registrar Hermes como `RemoteAgentConfig` (wss+Ed25519) **y exponerlo en `/api/agents` como agente seleccionable tipo `acp`** (el gateway como adaptador ACP), con `id`/`name`/`avatar`. Cablear el **send path** (crear conversación + stream) con **identidad firmada por request** (§1).
+2. **Frontend:** **nada** si se expone como `acp` → Hermes aparece **solo** en el pill bar de arriba (`AgentPillBar`), junto a Copilot/custom. (Si se expone como `openclaw-gateway`/`remote`, agregar ese tipo a `SUPPORTED_NEW_CONVERSATION_AGENT_TYPES` **solo** cuando el send path funcione.) Hermes usa `kb_search` (§3) scoped por identidad.
+
+> ⚠️ **NO** usar un "espacio" que solo rellena el prompt: la selección real es el **pill bar de arriba**. Lo mismo aplica a OpenClaw (migrarlo del espacio al selector cuando esté cableado).
 
 **Construir (b) Supervisor:**
 3. Pipeline: telemetría **anonimizada** → propuesta de fix (diff de skill) → cola en Command Center → **admin aprueba** → **commit/PR a `Alinea-OpenClaw`** (la fuente que hornea) + aplica en runtime + **canary/tests por skill** → rollback = revert.
 
 **Probar:**
-- **Chat:** el usuario abre el espacio Hermes y conversa (estado del sistema / "¿por qué falló X skill?" / "mejora este flujo"); responde scoped a su identidad.
+- **Chat:** Hermes aparece como **pill seleccionable arriba**; al seleccionarlo y enviar, la conversación va a Hermes y responde, **scoped** a la identidad del usuario.
 - **Supervisor:** inyectar un error recurrente → Hermes propone fix → aparece en Command Center → aprobar → cambia el skill **y persiste tras `deploy-v4.sh`** (porque fue PR al repo) → rollback disponible.
 - Hermes **no** ve contenido confidencial (solo agregados).
 

@@ -238,6 +238,35 @@ Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no t
 - Consume **telemetría anonimizada** → **propone** fixes de skills → **admin aprueba** en el Command Center → se aplican.
 - **Persistencia (gap corregido):** el fix aprobado genera **commit/PR a `Alinea-OpenClaw`** (la fuente que hornea `deploy-v4.sh`), no solo un parche en runtime (que se perdería en el próximo rebuild). Rollback = revert del commit. Antes de aplicar, debe pasar **tests por skill** (canary).
 
+### 8.4 🔧 Hermes/OpenClaw en el SELECTOR de arriba (Opción A — instrucción para Claude)
+
+> **Decisión (16-jun):** Hermes y OpenClaw deben **seleccionarse en el pill bar de arriba** (`AgentPillBar`), como Copilot y los agentes custom — **no** como "espacios" que solo rellenan el prompt. Camino elegido: **Opción A — el backend los expone como agentes seleccionables**; el frontend los muestra solo.
+
+**Hallazgo (frontend, ya verificado en el código):**
+- `AgentPillBar.tsx` **ya** sabe renderizar agentes **remotos/custom** (avatar emoji o logo) y al hacer clic llama `onSelectAgent(getAgentKey(agent))` (selección real).
+- El selector filtra con `isSupportedNewConversationAgent` en `utils/model/agentTypeSupportPolicy.ts`:
+  - `SUPPORTED_NEW_CONVERSATION_AGENT_TYPES = { 'acp', 'aionrs' }`
+  - `DEPRECATED_RUNTIME_AGENT_TYPES = { 'openclaw-gateway', 'remote', 'nanobot', 'gemini' }`
+  - Por eso **OpenClaw (`openclaw-gateway`) y Hermes (`remote`/gateway) NO aparecen** hoy en el selector. El cerdito 🐷 sí aparece porque es un **custom tipo `acp`**.
+- `availableAgents` viene de `/api/agents` (`DETECTED_AGENTS_SWR_KEY → fetchDetectedAgents`).
+
+**Qué debe hacer el BACKEND (Claude / Core + gateway):**
+1. **Exponer Hermes y OpenClaw en `/api/agents`** como **agentes seleccionables** con un `agent_type` que el selector acepte — **preferido: presentarlos como `acp`** (el gateway actúa como adaptador ACP), con `id`/`backend` propios, `name` ("Hermes" / "OpenClaw") y `avatar`/`icon`.
+2. **Cablear el camino de envío** (crear conversación + enviar/stream) para esos agentes vía el gateway, **con la identidad firmada por request** (§5.1). Sin esto, seleccionarlos rompería el chat (esa es la razón por la que hoy están deprecados).
+3. Mantener **handshake/registro** del gateway (`RemoteAgentConfig`) e **identidad por request**; scoping por usuario (§5/§6).
+
+**Qué hace el FRONTEND (Cursor — mínimo):**
+- Si el backend los expone como **`acp`** → **cero cambios**: aparecen solos en el pill bar.
+- Si se exponen como `openclaw-gateway`/`remote` → agregar ese tipo a `SUPPORTED_NEW_CONVERSATION_AGENT_TYPES` **solo cuando el send path ya funcione** (si no, rompe).
+- Cuando ya sean seleccionables arriba, **replegar/retirar el "espacio" de OpenClaw** (las tarjetas que rellenan prompt) para no duplicar la entrada.
+
+**Aceptación (100%):**
+- Hermes y OpenClaw aparecen como **pills seleccionables arriba** (junto a Copilot y el custom), con su avatar.
+- Seleccionar **Hermes** + enviar → la conversación va a Hermes y **responde** (con el gateway registrado), **scoped por usuario** (un usuario no ve datos/sesiones de otro).
+- Igual para OpenClaw.
+
+> **Estado:** frontend **listo** (el pill bar ya soporta agentes remotos). **Pendiente backend (Claude):** exponerlos como `acp` + cablear el send path con identidad. Una vez hecho, salen en el selector sin más (o con el flip de 1 línea de la política si se eligió el tipo gateway).
+
 ---
 
 ## 9. Agentic Mail = Zero + OpenClaw
