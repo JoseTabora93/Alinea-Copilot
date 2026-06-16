@@ -1,6 +1,6 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import UnoCSS from 'unocss/vite';
@@ -13,6 +13,40 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 const rootPackageJson = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf-8')) as {
   version: string;
 };
+
+// Unique-per-build identifier for the PWA service worker cache. Prefer the git
+// short SHA so the cache name only changes when the code changes (identical
+// rebuilds reuse the same name); fall back to a timestamp when git is
+// unavailable (e.g. a Docker build from a source tarball). This is what makes
+// the service worker auto-update on each deploy — see public/sw.js.
+const SW_BUILD_VERSION = (() => {
+  let buildId: string;
+  try {
+    buildId = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    buildId = Date.now().toString(36);
+  }
+  return `${rootPackageJson.version}-${buildId || Date.now().toString(36)}`;
+})();
+
+// Stamp the per-build version into the service worker that Vite copies verbatim
+// from publicDir into out/renderer/sw.js. Runs after the renderer bundle (and
+// its publicDir copy) so the emitted sw.js exists by the time we rewrite it.
+function swVersionStampPlugin(version: string) {
+  return {
+    name: 'vite-plugin-sw-version-stamp',
+    apply: 'build' as const,
+    closeBundle() {
+      const swPath = resolve('out/renderer/sw.js');
+      if (!existsSync(swPath)) return;
+      const src = readFileSync(swPath, 'utf-8');
+      const stamped = src.replace(/__SW_BUILD_VERSION__/g, version);
+      if (stamped !== src) writeFileSync(swPath, stamped);
+    },
+  };
+}
 
 // Build builtin MCP servers after main process bundle so they survive out/main/ cleanup.
 function buildMcpServersPlugin() {
@@ -227,6 +261,7 @@ export default defineConfig(({ mode }) => {
       plugins: [
         UnoCSS(unoConfig),
         iconParkPlugin(),
+        swVersionStampPlugin(SW_BUILD_VERSION),
         ...(enableSentrySourceMaps ? [sentryVitePlugin(sentryPluginOptions)] : []),
       ],
       build: {
