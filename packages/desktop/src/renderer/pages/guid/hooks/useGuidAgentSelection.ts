@@ -25,6 +25,14 @@ import { usePresetAssistantResolver } from './usePresetAssistantResolver';
 import { useAgentAvailability } from './useAgentAvailability';
 import { useCustomAgentsLoader } from './useCustomAgentsLoader';
 import { isSupportedNewConversationAgent } from '@/renderer/utils/model/agentTypeSupportPolicy';
+import alineaMark from '@renderer/assets/logos/brand/alinea-mark.svg';
+
+/**
+ * Brand display name for the built-in `aionrs` engine. It is the "normal model
+ * chat" path (runs the selected provider model), so we present it as "Copilot"
+ * with the Alinea mark instead of the backend's "Aion CLI" label.
+ */
+const AIONRS_DISPLAY_NAME = 'Copilot';
 
 export type GuidAgentSelectionResult = {
   selectedAgentKey: string;
@@ -287,10 +295,13 @@ export const useGuidAgentSelection = ({
       .map((a) => {
         const asAgent = a as AgentMetadata;
         const isCustomRow = asAgent.agent_source === 'custom';
+        const isAionrs = asAgent.agent_type === 'aionrs' || (a as AvailableAgent).backend === 'aionrs';
         return Object.assign({}, a, {
           id: asAgent.id,
           custom_agent_id: isCustomRow ? asAgent.id : (a as AvailableAgent).custom_agent_id,
           avatar: isCustomRow ? asAgent.icon : (a as AvailableAgent).avatar,
+          // Brand: surface the built-in engine as "Copilot" + Alinea mark.
+          ...(isAionrs ? { name: AIONRS_DISPLAY_NAME, icon: alineaMark } : {}),
         });
       });
     setAvailableAgents(normalisedDetected);
