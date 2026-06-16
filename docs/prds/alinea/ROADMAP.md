@@ -15,6 +15,7 @@
 | Feature | Decisión | Dónde vive | Complejidad |
 | --- | --- | --- | --- |
 | **GLM (z.ai) + MiniMax** | Router de modelos + agentes de documento/slides de z.ai; MiniMax para tareas baratas/largas; **templates de marca** (calidad "diseñador gráfico") | Core (router/adapters) + Frontend (assistant + preview) + plantillas | Media-Alta |
+| **Prompt caching** | Cachear el **prefijo estable** (system/skills/KB/proyecto) para abaratar tokens; ordenar prompt + `cache_control`; medir cache-read vs write | Core (construcción de prompt) + ledger (§4.6) | Media |
 | **Hermes** | Servicio aparte en el mismo VPS que **mejora UX y repara skills** (supervisor); se conecta como agente remoto | Servicio Hermes + Core (gateway) + Frontend (command center) | Media-Alta |
 | **Agentic Mail** | Completo: insights de contactos, prefiltro/triage, respuestas profesionalizadas. **IMAP/SMTP** para integrar cualquier proveedor | Skill/MCP (OpenClaw o Core) + creds por usuario | Alta |
 | **Todos / Knowledge** | Producto tipo **Notion**: tareas + docs + **base de conocimiento visible** y consultable por agentes; conecta cualquier API | Core (módulo workspace/KB) + Frontend (módulo nuevo) | Alta |
@@ -117,6 +118,8 @@ Pendientes concretos:
 - Los **agentes de z.ai** generan el artefacto **diseñado del lado servidor** (slides/doc) y devuelven el archivo/HTML estructurado → **no se queman tokens** emitiendo todo el formato en el chat. El modelo de chat solo orquesta (brief → agente → resultado).
 - **Router por subtarea:** MiniMax para extracción/borrador/long-context barato; GLM agents para el "render" final diseñado; Claude para razonamiento técnico crítico. Regla: *el más barato que cumpla la calidad objetivo.*
 - **Capa de diseño de marca:** plantillas Alinea (paleta Sage Green, Poppins) + **plantillas por tipo de documento** ("lo que lleva cada uno"): propuesta comercial, memoria técnica, BOM, informe gerencial, etc. El agente rellena la plantilla → consistencia visual garantizada.
+
+> Complemento de eficiencia: **prompt caching** (§4.9) sobre el prefijo estable (plantillas/skills/KB) reduce aún más el costo de tokens.
 
 **Encaje por repo:**
 - **Core:** adaptadores z.ai (agents API) y MiniMax; **router** de modelos; almacenamiento del artefacto generado.
@@ -301,6 +304,34 @@ flowchart LR
 
 ---
 
+### 4.9 Prompt caching — abaratar tokens reutilizando contexto estable
+
+**Pedido:** usar **prompt cache** para uso efectivo de tokens.
+
+**Qué es:** los providers cachean el **prefijo estable** del prompt; las **lecturas de cache** cuestan mucho menos que tokens frescos (Anthropic `cache_control`/ephemeral; OpenAI/GLM/otros: cache automático si el prefijo es idéntico).
+
+**Por qué encaja fuerte aquí:** el contexto pesado y estable de Alinea es ideal para cachear:
+- System prompts + definiciones de **skills** de OpenClaw/Hermes.
+- **KB / contexto de proyecto** (§4.4/§4.8) — el mismo cuerpo de docs se reusa en muchos turnos.
+- Instrucciones de assistant / **plantillas** de documentos (§4.1).
+
+**Diseño (sobre todo en el Core):**
+- **Ordenar el prompt:** `[estable: system + tools/skills + KB/proyecto] → [volátil: turno del usuario]`. Prefijo estable primero = máximo cache-hit.
+- **Marcar breakpoints** (Anthropic `cache_control: ephemeral`) en system/tools/KB; para OpenAI/GLM basta mantener el prefijo **idéntico** (cache automático).
+- **Capability por provider:** flag "soporta prompt cache" + estrategia (explícito vs automático). `IProvider.capabilities` ya existe y se podría extender.
+- **TTL:** Anthropic ~5 min (o 1h opcional). Importa para sesiones intermitentes — agentes que repiten contexto rápido se benefician más.
+
+**Relación con consumos (§4.6):** el ledger debe distinguir **cache-write** (un poco más caro la 1ª vez) de **cache-read** (mucho más barato) para el $ real y para mostrar el ahorro.
+
+**Estado hoy:** **no hay prompt caching de LLM** (lo único "cache" es `Cache-Control` HTTP de assets y el Service Worker). Es trabajo de Core/provider.
+
+**Dudas restantes:**
+- ¿Qué providers que usamos lo soportan (Claude sí; GLM/MiniMax/OpenRouter — confirmar) y con qué API?
+- ¿El Core ya ordena el prompt con prefijo estable / marca `cache_control`, o hay que implementarlo?
+- ¿Medimos cache-read vs cache-write en el ledger (afecta el $ por usuario)?
+
+---
+
 ## 5. (movido) — gestión de agentes remotos
 
 Ver **§4.7 Command Center**. Recordatorio técnico: `RemoteAgentManagement.tsx` existe pero **no está montado** (`AgentModalContent` solo muestra "Local Agents" y redirige `?tab=remote → local`). Montarlo es prerequisito de Hermes/OpenClaw administrables.
@@ -370,6 +401,7 @@ flowchart TB
 **Fase B — Identidad y modelos (cimientos de todo):**
 - 🔐 **Propagación de identidad por request** + base de **segregación** (§6) — habilita consumos y mail seguros. *(Core + gateway)*
 - **Router de modelos** GLM(z.ai)/MiniMax/Claude + assistant "Documentos/Slides" + plantillas de marca (§4.1).
+- **Prompt caching** del prefijo estable (system/skills/KB) + contabilizar cache-read/write (§4.9).
 - **Montar Command Center** (§4.7) → desbloquea Hermes/OpenClaw administrables.
 
 **Fase C — Agentes y productividad:**
@@ -393,7 +425,7 @@ flowchart TB
 - GLM(z.ai)+MiniMax con router + documentos diseñados por plantilla · Hermes = servicio supervisor remoto · Mail completo por IMAP · Todos = producto Notion-like + KB visible · DXF (no DWG) con medición para no-AutoCAD · Consumos en $ por usuario · Command Center sí · Core PR #2 merge OK.
 
 **Dudas abiertas clave (para responder con Claude Code):**
-- Tipos de documento + plantillas (§4.1) · autonomía/UI de Hermes (§4.2) · IMAP vs OAuth + dónde viven insights (§4.3) · KB propia vs Notion/Zoho + escritura a `KB3` (§4.4) · medición DXF alcance (§4.5) · llaves Alinea vs propias para consumo (§4.6) · **proyectos: entidad propia vs WorkDrive como backend + unificar picker en WebUI (§4.8)** · **modelo de roles/ACL y propagación de identidad en el gateway (§6)** ← el más estructural.
+- Tipos de documento + plantillas (§4.1) · autonomía/UI de Hermes (§4.2) · IMAP vs OAuth + dónde viven insights (§4.3) · KB propia vs Notion/Zoho + escritura a `KB3` (§4.4) · medición DXF alcance (§4.5) · llaves Alinea vs propias para consumo (§4.6) · **proyectos: entidad propia vs WorkDrive como backend + unificar picker en WebUI (§4.8)** · prompt caching: soporte por provider + medición cache-read/write (§4.9) · **modelo de roles/ACL y propagación de identidad en el gateway (§6)** ← el más estructural.
 
 ---
 
@@ -403,6 +435,7 @@ flowchart TB
 | --- | --- |
 | Agentes remotos / gateway | `common/types/agent/remoteAgentTypes.ts`, `common/types/agent/detectedAgent.ts`, `common/adapter/ipcBridge.ts` (`remoteAgent`), `pages/settings/AgentSettings/RemoteAgentManagement.tsx` (huérfano → Command Center) |
 | Providers / GLM / MiniMax | `common/config/storage.ts` (`IProvider`), `utils/model/modelPlatforms.ts` (Zhipu/MiniMax presets), `common/utils/platformAuthType.ts`, `pages/settings/components/AddPlatformModal.tsx` |
+| Prompt caching (a futuro) | `common/config/storage.ts` (`IProvider.capabilities`) en frontend; construcción/orden del prompt + `cache_control` = **Core** |
 | Preview / viewers (DXF) | `common/types/office/preview.ts` (`PreviewContentType`), `Preview/fileUtils.ts`, `Preview/components/PreviewPanel/PreviewPanel.tsx`, `Preview/components/viewers/*`, `OfficeWatchViewer.tsx` |
 | Office preview APIs | `ipcBridge.ts` (`wordPreview`, `excelPreview`, `pptPreview`) + Core `/api/*-preview/start` |
 | Cron / scheduled (mail/todos) | `ipcBridge.ts` (`cron`, `ICronJob`), `pages/cron/ScheduledTasksPage/*` |
