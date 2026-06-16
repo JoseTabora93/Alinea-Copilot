@@ -347,6 +347,17 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 
 ## 15. Orden de build (con todo integrado)
 
+> **Cómo leer este orden:** son **dependencias**, no una fila única. Corren en **2 tracks en paralelo**:
+> - **Track Core (Claude):** estrictamente **cimiento primero** (identidad → RBAC → RAG → ledger). Nada multiusuario-sensible se expone antes de que la segregación esté **verde** (tests §7).
+> - **Track UI (Cursor):** puede **adelantar wins independientes** que NO dependen del cimiento, mientras Claude construye el Core.
+>
+> **Quick wins que se pueden adelantar (bajo riesgo, alto valor):**
+> 1. **Visor DXF** (#16) — 100% independiente (frontend puro); útil ya para técnicos/asesores.
+> 2. **Command Center** (#11) y **agent space de Hermes** (#12, parte UI) — se construyen ahora y se **cablean seguro** cuando aterrice identidad.
+> 3. **Router de modelos + prompt caching** (#9) — ahorro de tokens y documentos diseñados desde temprano.
+>
+> **Regla de oro:** Correo, **compartición** de Proyectos y KB **cruzada entre usuarios** NO se liberan hasta que **identidad + segregación + tests** estén verdes (#5–#8). En modo single-admin/local sí se pueden desarrollar/demostrar antes.
+
 **Fase A — Cierre en vuelo**
 1. ✅ #10 (rebrand) + #11 (SW auto-update).
 2. **Core PR #2 `DELETE user`** — resolver conflicto Rust + merge (OK dado).
