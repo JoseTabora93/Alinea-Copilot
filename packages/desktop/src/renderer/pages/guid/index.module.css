@@ -711,14 +711,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  /* Scroll when content (hero + OpenClaw space + assistant cards) exceeds the
+     viewport; auto margins on the child keep it centered when there's room. */
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 10px;
   position: relative;
 }
 
-/* 整体内容块略往上移，减轻「重心偏下」的感觉 */
+/* Centered when it fits, scrollable when it doesn't (auto margins collapse). */
 .guidContainer .guidLayout {
-  margin-top: -5vh;
+  margin-block: auto;
 }
 
 /* Agent 选中时：先放大再回落至略大（pop 动效） */
