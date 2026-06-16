@@ -120,7 +120,7 @@ export async function getDefaultAionrsModel(): Promise<TProviderWithModel> {
 
   const compatibleProviders = providers.filter(isAionrsCompatibleProvider);
   if (compatibleProviders.length === 0) {
-    throw new Error('No enabled model provider for Aion CLI');
+    throw new Error('No enabled model provider for Copilot');
   }
 
   const savedDefault = configService.get('aionrs.defaultModel');
