@@ -146,3 +146,33 @@ For pull request creation, see the `oss-pr` skill (`.claude/skills/oss-pr/SKILL.
 | **pr-automation** | PR automation orchestrator: poll PRs, review, fix, and merge via label state machine  | Invoked by daemon script (`pr-automation.sh`), `/pr-automation`                            |
 
 > Skills are located in `.claude/skills/` and contain project conventions that apply to **all** agents and contributors.
+
+## Cursor Cloud specific instructions
+
+These notes capture non-obvious caveats for running AionUi in the Cursor Cloud VM. Standard commands live in `docs/contributing/development.md`, `package.json` scripts, and the `justfile` — refer to those; only the gotchas below are documented here.
+
+### Toolchain
+
+- `bun` is the package manager/runtime (installed under `~/.bun/bin`, already on `PATH`). Node 22 and Python 3.12 are preinstalled. The startup update script runs `bun install`, which also runs `postinstall` (`electron-builder install-app-deps`) to build the `better-sqlite3` native module.
+
+### aioncore backend binary (required, NOT committed)
+
+- The Rust backend `aioncore` powers the built-in "Aion CLI" agent and the WebUI backend (SQLite). It lives at `resources/bundled-aioncore/<platform-arch>/aioncore`, which is **gitignored and not part of the snapshot-guaranteed state**. If it is missing, fetch the pinned version (`aioncoreVersion` in `package.json`) before running the app:
+  ```bash
+  node scripts/prepareAioncore.js   # downloads from iOfficeAI/AionCore GitHub releases
+  ```
+  This is deliberately kept out of the update script (it needs network/GitHub and would make startup brittle). Run it once per fresh VM when you need the agent backend or WebUI.
+
+### Running the app in the headless VM
+
+- **WebUI mode is the recommended way to run/test here** — it is browser-accessible and needs no display:
+
+  ```bash
+  AIONUI_OPEN_BROWSER=0 bun run webui   # serves http://127.0.0.1:25809
+  ```
+
+  - On the first launch it builds the renderer via `bun run package` (~30s). If `out/renderer` is already built, skip the rebuild with `--no-build` (or `AIONUI_NO_BUILD=1`).
+  - On first run it seeds an admin account (username `admin`) and prints the password to the log. Forgot it? Run `bun run resetpass`. WebUI data lives in `~/.aionui-web-dev/` (separate from the Electron desktop data dir).
+  - A `502 / BAD_GATEWAY` from `/api/providers/fetch-models` is expected when a configured model provider has no valid/reachable API key — it does not block saving the provider.
+
+- **Desktop mode** (`bun start`, the canonical dev flow) launches Electron and needs a display server (e.g. `xvfb`) plus GUI system libraries; prefer WebUI mode for headless verification.
