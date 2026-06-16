@@ -4,8 +4,10 @@
 > Reescrito para que quede claro de punta a punta. NO es greenfield: se construye sobre lo existente.
 > Acompaña a `Alinea_FASE2_Guias.md` (el "cómo construir + cómo probar", paso a paso).
 >
-> Pieza que más se aclaró en v2: **chat con Hermes** (estaba subutilizado), **RAG compuesto único**
-> (lo ven Copilot/OpenClaw/Hermes) y una **UI completa** que guía al usuario.
+> Piezas que más se aclararon: **chat con Hermes** (estaba subutilizado), **RAG compuesto único**
+> (lo ven Copilot/OpenClaw/Hermes), una **UI completa** que guía al usuario, y la **capa humana
+> nativa y liviana** dentro de Alinea (**BlockNote** para conocimiento + **board dnd-kit** para tareas),
+> dejando **Huly como opcional/descartado por defecto** (sin el servicio pesado de ~16 GB).
 
 ---
 
@@ -24,14 +26,14 @@
 
 | Tema | Decisión |
 |---|---|
-| Stack | **Fijo**: Core **Rust (aioncore)**, Frontend **Electron/React/Arco**, agentes **OpenClaw**, **Hermes** y **Zero/Huly** como servicios en el VPS. NO Next.js/Supabase/Clerk. |
+| Stack | **Fijo**: Core **Rust (aioncore)**, Frontend **Electron/React/Arco**, agentes **OpenClaw** y **Hermes** + **Zero** (correo) como servicios en el VPS; **Huly opcional**. Capa humana **nativa** (BlockNote + dnd-kit). NO Next.js/Supabase/Clerk. |
 | Identidad | El Core emite por request un **token de contexto firmado** Ed25519 `{user_id, rol[], project_id?, scopes, exp, jti}`. El gateway lo propaga a OpenClaw/Hermes en **cada** mensaje. |
 | Segregación | **3 ejes combinados (AND)**: rol/etiqueta **+** ownership/membership **+** project-scope. (Ver §5 — corrige el "solo rol" del plan anterior.) |
 | RAG | **Compuesto y único** en el Core (KB3 + KB viva + project_docs), consultado por **Copilot, OpenClaw y Hermes**, con **ACL por request**. (Ver §6.) |
 | Consumos | **Llaves de Alinea vía el Core** → **un ledger** mide los 3 motores; límite **pre-flight** (antes de gastar). |
 | Hermes | **Doble rol**: (a) **agente de chat** seleccionable por el usuario; (b) **supervisor** que propone fixes de skills (admin aprueba). (Ver §8.) |
 | Mail | **Solo borradores** (human-in-the-loop). Integrar **Zero (mail-0/zero)** vía MCP; fallback IMAP por usuario. |
-| Knowledge/Tareas/Notif. (humano) | **Huly self-host** (SSO) como capa humana; el **RAG del Core** alimenta a los agentes. |
+| Knowledge/Tareas/Notif. (humano) | **Nativo y liviano DENTRO de Alinea**: Conocimiento con **BlockNote** (editor Notion-like, React, MPL-2.0), Tareas con **board dnd-kit** (MIT), Notificaciones nativas (WS del Core). El **RAG del Core** indexa esos docs. **Huly = opcional/descartado por defecto** (ver §11). |
 | Router de modelos | **Auto** (el más barato que cumpla calidad) + **override** del usuario (`económico ⇄ máxima`). |
 | Secretos | Cifrado **por usuario** con **envelope encryption** (DEK por usuario ⊂ master KEK), para poder rotar. |
 | Visor DXF | Frontend: **parser + renderer** (`dxf-parser` + `three-dxf`/canvas), capas + medición (distancia/área/cotas) con unidades del header. |
@@ -48,7 +50,7 @@
 | **OpenClaw** (servicio) | Ejecuta los agentes de trabajo. Se conecta como agente remoto (gateway wss+Ed25519). | VPS |
 | **Hermes** (servicio) | **Chat** (orquestador/ops copilot) **+ supervisor** que mejora skills. Mismo gateway. | VPS |
 | **Zero** (servicio) | Correo agéntico (unified inbox + MCP). | VPS |
-| **Huly** (servicio) | Capa humana: PM, tareas, chat, notificaciones, docs (SSO). | VPS/box aparte |
+| **Huly** (servicio) | **Opcional — descartado por defecto.** PM pesado tipo Jira+Notion; reemplazado por módulos nativos (BlockNote + dnd-kit). Sumar solo si se necesita PM avanzado y hay hierro. | VPS/box aparte |
 
 > Nota: este repo (Alinea-Copilot) **no** contiene `openclaw/` ni Hermes; viven en el VPS. Los docs de Fase 2 se versionan aquí y deben **espejarse** a `Alinea-OpenClaw/fase2/`.
 
@@ -61,9 +63,9 @@ flowchart TB
   subgraph Cliente[Alinea-Copilot · UI completa]
     CHAT[Chat + 3 agent spaces<br/>Copilot · OpenClaw · Hermes]
     PROJ[Proyectos + WorkDrive]
-    KBUI[Conocimiento KB]
+    KBUI[Conocimiento · BlockNote]
     MAILUI[Correo]
-    TASKS[Tareas / Huly]
+    TASKS[Tareas · board dnd-kit]
     CC[Command Center]
     USE[Consumos]
     NOTIF[Notificaciones]
@@ -83,7 +85,7 @@ flowchart TB
     OC[OpenClaw<br/>agentes de trabajo]
     HER[Hermes<br/>chat + supervisor]
     ZERO[Zero · correo]
-    HULY[Huly · capa humana SSO]
+    HULY[Huly · OPCIONAL/descartado]
   end
 
   Cliente -->|HTTP/WS o IPC| Core
@@ -98,8 +100,8 @@ flowchart TB
   ROUTER -->|retrieve| RAG
   OC --> ZERO
   HER -.telemetría anonimizada.-> OC
-  Cliente -. SSO OIDC .-> HULY
-  RAG <-->|sync ACL| HULY
+  KBUI -->|docs editados| RAG
+  HULY -.opcional sync ACL.-> RAG
 ```
 
 **Invariante de oro:** la identidad (`user_id`+rol+proyecto) viaja en **cada** request y **filtra todo** (RAG, archivos, mail, memoria, skills). El agente nunca "asume" el usuario: lo **recibe firmado** del Core.
@@ -164,7 +166,7 @@ Como **supervisor**, Hermes ve **telemetría anonimizada/agregada** (errores, ra
 | Fuente | Qué es | Mutabilidad |
 |---|---|---|
 | **KB3** | Normas/estándares Ingelmec (horneada en OpenClaw). | Inmutable (re-import al re-hornear). |
-| **KB viva** | Docs editables desde la UI / Huly. | Mutable. |
+| **KB viva** | Docs editables desde la UI (`/knowledge`, BlockNote). | Mutable. |
 | **project_docs** | Documentos adjuntos a un Proyecto (§10). | Mutable, scoped a proyecto. |
 | **memoria/insights** (opcional) | Insights de contactos (mail), notas. | Mutable, scoped a usuario. |
 
@@ -258,19 +260,28 @@ Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no t
 
 ---
 
-## 11. Knowledge / Tareas / Notificaciones — Huly (humano) + RAG (agentes)
+## 11. Knowledge / Tareas / Notificaciones — NATIVO en Alinea (Huly opcional)
 
-- **Huly self-host** (≈16 GB): capa **humana** (proyectos, tareas, chat, **notificaciones**, docs).
+**Decisión (16-jun):** la capa humana se construye **nativa y liviana dentro de Alinea**, no con Huly. Esto elimina el servicio pesado (~16 GB), el problema de SSO/OIDC y la duda de licencia. Tres piezas:
 
-**Rol final de Huly (cómo queda):** Huly **NO** reemplaza a Alinea ni se "fusiona" en su UI. Queda como la **capa humana de colaboración/PM** (tipo Jira+Notion para personas), corriendo como servicio aparte en el VPS. **Alinea sigue siendo la capa IA** (chat, agentes, correo agéntico, DXF, command center, consumos). Se unen por **3 puentes**:
-1. **Proyecto = 1:1**: un "Proyecto" de Alinea (contenedor de contexto IA: docs+chats+RAG, §10) **mapea a un proyecto de Huly**. En Huly lo gestionas como humano (tareas, board); en Alinea lo usas como contexto para la IA. Conceptualmente es **un solo** proyecto.
-2. **Tareas viven en Huly** (no rebuildeamos un PM): el módulo `/tasks` de Alinea **embebe/enlaza** Huly; la IA crea/lee tareas vía API.
-3. **Conocimiento**: los docs humanos viven en Huly; el **RAG del Core los indexa** (con ACL) para que los agentes los vean. La KB3 (normas) vive **solo** en el Core.
+### 11.1 Conocimiento (docs/notas) → **BlockNote**
+- Repo: `github.com/TypeCellOS/BlockNote`. **Editor Notion-like** para React, batteries-included (slash menu, drag de bloques, toolbar), trae su **propia UI** (convive con Arco). Exporta **Markdown/HTML/JSON**.
+- **Licencia MPL-2.0** (core) → comercial OK. ⚠️ **No** usar los paquetes **"XL" (GPL)**.
+- Vive como módulo `/knowledge`. Los docs se **indexan en el RAG del Core** (con ACL) → los agentes los ven (§6).
 
-> **Decisión/tradeoff a confirmar:** los módulos nativos `Proyectos/Tareas/Conocimiento` (§13) se construyen **delgados y orientados a IA**, apoyándose en Huly para el PM pesado. **Alternativa** (si no quieres el hierro de ~16 GB de Huly): construirlos **nativos** en Alinea y **omitir Huly**. Recomendación: empezar **sin Huly** (módulos nativos ligeros) y sumar Huly cuando el hierro y el SSO estén listos — así Fase D no se bloquea por infra.
-- **SSO (gap):** "login único Alinea→Huly" asume que el Core es **OIDC Provider**, lo cual probablemente **no** es hoy. Decidir: (a) implementar OIDC Provider mínimo en el Core; (b) **IdP dedicado** (Keycloak/Zitadel); (c) arrancar con **provisioning sin SSO** y dejar SSO para después. (b)/(c) reducen riesgo.
-- **KB viva ↔ RAG:** los docs de Huly que los agentes deben ver se **indexan en el RAG del Core** respetando ACL (sync idempotente con webhooks + job). La **KB3 normas** vive solo en el Core.
-- **Embeddings:** elegir modelo (local vs API), **español**, costo (al ledger `system:kb-index`).
+### 11.2 Tareas (board) → **dnd-kit**
+- Repo: `github.com/clauderic/dnd-kit`. **MIT.** Estándar moderno de drag-and-drop en React.
+- Montamos un **Kanban liviano** (dnd-kit + componentes Arco), no otra app de PM. Vive en `/tasks`. Persistencia en el Core (SQLite). La IA crea/lee tareas vía API. Incluye además los **todos del agente** (plan que se va tachando).
+
+### 11.3 Notificaciones → **nativas**
+- Campana global sobre el **WS del Core** (`ipcBridge`): "borrador listo", "fix de Hermes pendiente", "presupuesto excedido". Sin dependencia externa.
+
+### 11.4 KB viva ↔ RAG (clave para los agentes)
+- Lo que se edita en `/knowledge` (BlockNote) se **indexa en el RAG del Core** respetando ACL. La **KB3 normas** vive solo en el Core.
+- **Embeddings:** elegir modelo (local vs API), **español**, costo al ledger `system:kb-index`.
+
+### 11.5 Huly = opcional (no por defecto)
+- Si en el futuro se necesita **PM avanzado** (boards complejos, sprints, time-tracking, chat de equipo), se puede sumar Huly como **servicio aparte** y mapear **Proyecto 1:1** + sync de docs al RAG. Requiere hierro (~16 GB) y resolver SSO (OIDC Provider en el Core, o IdP dedicado tipo Keycloak/Zitadel, o provisioning sin SSO). **No es necesario para Fase 2.**
 
 ---
 
@@ -292,9 +303,9 @@ No es solo chat. Mapa de módulos (todos **role-gated** por §5.2):
 |---|---|---|---|
 | **Home / Chat** | `/guid` | Chat + 3 agent spaces: **Copilot**, **OpenClaw** (6 cat.), **Hermes**. Selector de modelo + override económico/máxima. | Todos |
 | **Proyectos** | `/projects` | Lista/crea proyectos (docs + contexto + chats + carpeta WorkDrive). Vista de proyecto. | Miembros |
-| **Conocimiento (KB)** | `/knowledge` | Navegar/buscar/editar la KB viva (visible, ya no escondida); ver fuentes/citas. ACL-aware. | Por rol |
+| **Conocimiento (KB)** | `/knowledge` | Navegar/buscar/**editar** la KB viva con **BlockNote** (Notion-like); ver fuentes/citas. ACL-aware. | Por rol |
 | **Correo** | `/mail` | Bandeja agéntica: triage, insights de contacto, **borradores** (aprobar/editar/enviar). | Dueño del buzón |
-| **Tareas** | `/tasks` | Tareas (Huly embed o nativo) + todos del agente. Notificaciones. | Por proyecto/rol |
+| **Tareas** | `/tasks` | **Board nativo (dnd-kit)** + todos del agente. Notificaciones. | Por proyecto/rol |
 | **Command Center** | `/settings/agents` (extendido) | Agentes/gateways (OpenClaw, Hermes), salud en vivo, aprobación de devices, **aprobación de fixes de Hermes**, uso por agente, logs. | Admin |
 | **Consumos** | `/settings/usage` | $ por usuario/modelo/motor, límites, "mi consumo". | Admin / cada uno lo suyo |
 | **Usuarios y roles** | `/settings/users` (extendido) | Alta/baja, **roles** (admin/gerencia/técnica/comercial/financiera/ingeniería), límites $. | Admin |
@@ -312,9 +323,9 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 |---|---|---|
 | Home / 3 agent spaces | **Extiende** | `/guid` (GuidPage) ya tiene Copilot + OpenClaw space → se **agrega el space de Hermes** y el selector de modelo/override. |
 | Proyectos | **Nuevo** | Ruta `/projects` + entrada en el sidebar de `Layout.tsx`; **evoluciona** el "Work in a project" (`GuidWorkspaceFootnote.tsx`). Reusa `DirectorySelectionModal` (`/api/fs/*`). |
-| Conocimiento (KB) | **Nuevo** | Ruta `/knowledge` + sidebar; reusa los viewers de markdown/preview. Visibiliza la KB (hoy oculta). |
+| Conocimiento (KB) | **Nuevo** | Ruta `/knowledge` + sidebar; **editor BlockNote** embebido. Visibiliza la KB (hoy oculta). |
 | Correo | **Nuevo** | Ruta `/mail` + sidebar. |
-| Tareas | **Extiende** | `/scheduled` (cron, ya existe) + opcional Huly embed. |
+| Tareas | **Nuevo + extiende** | Ruta `/tasks` con **board dnd-kit** + reusa `/scheduled` (cron) para programadas. |
 | Command Center | **Extiende** | `/settings/agent`: montar `RemoteAgentManagement.tsx` (hoy huérfano). |
 | Consumos | **Nuevo (tab Settings)** | `/settings/usage` dentro del `SettingsPageWrapper`. |
 | Usuarios / Roles | **Extiende** | `/settings/users` (panel ya construido) + roles. |
@@ -328,7 +339,9 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 
 ## 14. Hierro / infra
 
-El VPS actual (4 vCPU / 7.6 GB, compartido) **no alcanza** para sumar Huly (~16 GB) + Zero (Postgres). **Decisión:** subir a ≥8 vCPU / 32 GB **o** un box dedicado para Huly. Sin esto, la Fase D (Huly) no es viable. Incluir **backups/DR** de SQLite (Core) + Postgres (Zero) + DBs de Huly + índice RAG, y **rotación de la master key** (envelope encryption).
+**Al descartar Huly, el hierro de Fase 2 baja mucho.** La capa humana (BlockNote + dnd-kit) corre **dentro de Alinea** (sin DBs extra). Lo que pesa en el VPS: **OpenClaw + Hermes + Zero (Postgres)** + el índice RAG/embeddings del Core.
+- **Recomendación:** el VPS actual (4 vCPU / 7.6 GB) puede ir justo con OpenClaw+Hermes+Zero; conviene **subir a ~8 vCPU / 16 GB** para holgura (embeddings + Zero). **Ya no se necesitan los ~16 GB extra de Huly** (a menos que lo sumes opcionalmente, §11.5).
+- Incluir **backups/DR** de SQLite (Core) + Postgres (Zero) + índice RAG, y **rotación de la master key** (envelope encryption).
 
 ---
 
@@ -355,7 +368,7 @@ El VPS actual (4 vCPU / 7.6 GB, compartido) **no alcanza** para sumar Huly (~16 
 
 **Fase D — Proyectos / Knowledge / Docs**
 14. **Proyectos** (entidad + RAG por proyecto + membership) + **unificar picker WebUI** + **WorkDrive** (anti-conflicto TrueSync).
-15. **Huly + estrategia SSO/IdP** + KB viva ↔ RAG (sync ACL).
+15. **Conocimiento (BlockNote)** + **Tareas (board dnd-kit)** + **KB viva ↔ RAG** (índice del Core). *(Huly opcional, no por defecto — §11.5.)*
 16. **Visor DXF** (parser + renderer + medición).
 
 **Fase E — Gobernanza**
@@ -369,8 +382,8 @@ El VPS actual (4 vCPU / 7.6 GB, compartido) **no alcanza** para sumar Huly (~16 
 
 ## 16. Reparto Claude / Cursor
 
-- **Claude Code:** Core (Rust) estructural (identidad, RBAC 3 ejes, **RAG compuesto**, router, ledger, gateway), skills/MCP de OpenClaw, Hermes (chat + supervisor), integración Zero/Huly, infra del VPS.
-- **Cursor (yo):** **toda la UI** (los 11 módulos de §13: Command Center, Proyectos, Conocimiento, Correo, Tareas, Consumos, DXF, notificaciones, router/override, gating por rol) + PRs acotados del Core.
+- **Claude Code:** Core (Rust) estructural (identidad, RBAC 3 ejes, **RAG compuesto**, router, ledger, gateway), skills/MCP de OpenClaw, Hermes (chat + supervisor), integración Zero (+ Huly opcional), infra del VPS.
+- **Cursor (yo):** **toda la UI** (los 11 módulos de §13: Command Center, Proyectos, **Conocimiento con BlockNote**, Correo, **Tareas con board dnd-kit**, Consumos, DXF, notificaciones, router/override, gating por rol) + PRs acotados del Core.
 - Coordinación por PRs en los 3 repos. **Estos docs son las instrucciones al 100%**; el "cómo + cómo probar" está en `Alinea_FASE2_Guias.md`.
 
 ---
@@ -384,12 +397,12 @@ El VPS actual (4 vCPU / 7.6 GB, compartido) **no alcanza** para sumar Huly (~16 
 ### 17.1 Lo verificado en este repo (Alinea-Copilot)
 - **Base (AionUi):** **Apache-2.0** (`LICENSE` raíz + `package.json`). Permisiva → **uso comercial permitido**.
   - **Obligación:** conservar `LICENSE`, los avisos de copyright y `NOTICE` (los headers `Copyright 2025 AionUi`). **Puedes rebrandear** el producto a Alinea, pero **no** quitar la atribución Apache.
-- **Dependencias:** sin licencias copyleft fuertes ni SaaS-restrictivas detectadas (no AGPL/GPL/SSPL/BUSL/Commons Clause/PolyForm/Elastic en los `package.json`). React, Arco, three.js, dxf-parser, etc. son **MIT/permisivas**. Poppins = **SIL OFL** (comercial OK).
+- **Dependencias:** sin licencias copyleft fuertes ni SaaS-restrictivas detectadas (no AGPL/GPL/SSPL/BUSL/Commons Clause/PolyForm/Elastic en los `package.json`). React, Arco, three.js, dxf-parser, **dnd-kit** = **MIT**. Poppins = **SIL OFL**. **BlockNote** = **MPL-2.0** (core, comercial OK; ⚠️ no usar paquetes "XL"/GPL). Todo comercial-OK.
 
 ### 17.2 Componentes externos a verificar (no están en este repo)
 | Componente | Qué confirmar | Nota |
 |---|---|---|
-| **Huly** | Su licencia exacta (self-host) y condiciones si lo **ofreces como servicio**. | Suele ser copyleft débil (tipo EPL). Correrlo como **servicio aparte** (no empotrado en tu binario) reduce enredo; **distribuirlo/ofrecerlo como SaaS** puede tener condiciones. **Verificar.** |
+| **Huly** (solo si se suma, §11.5) | Su licencia exacta (self-host) y condiciones si lo **ofreces como servicio**. | **Descartado por defecto** (capa humana es nativa BlockNote+dnd-kit). Si se suma: copyleft débil (tipo EPL); correrlo como **servicio aparte** reduce enredo; **verificar** antes de SaaS. |
 | **Zero (mail-0/zero)** | Que sea **MIT** (como asume el blueprint). | Si MIT → comercial OK. **Verificar** la versión que despliegues. |
 | **OpenClaw / Hermes** | Licencia de `Alinea-OpenClaw` y de cualquier base de la que deriven. | Si es código propio → OK. **Verificar** dependencias internas. |
 | **Modelos (z.ai/GLM, MiniMax, Claude, Qwen)** | **ToS comercial** de cada proveedor (vía API). | El uso comercial de salidas suele estar permitido; cumplir políticas de uso, no reventa de API cruda, datos. Qwen self-host tiene su propia licencia. |

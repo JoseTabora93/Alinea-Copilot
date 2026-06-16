@@ -2,7 +2,7 @@
 
 > Instrucciones **al 100%** para construir cada feature de Fase 2 + su criterio de aceptación
 > "no superficial". Complemento ejecutable de `Alinea_FASE2_Blueprint.md`.
-> Stack fijo (Rust/Electron-React/OpenClaw/Hermes/Zero/Huly). Lenguaje: español.
+> Stack fijo (Rust/Electron-React/OpenClaw/Hermes/Zero; capa humana nativa con BlockNote+dnd-kit; Huly opcional). Lenguaje: español.
 >
 > Cada bloque: **Construir (qué + dónde) → Cómo se comunica → Probar (aceptación)**.
 
@@ -10,7 +10,7 @@
 
 ## 0. Flujo de trabajo (3 repos + VPS)
 - **Ramas/PRs:** nada directo a `main`. Una rama por feature, PR por repo. Escanear secretos antes de pushear.
-- **Repos:** `AlineaCopilot-Core` (Rust) · `Alinea-Copilot` (frontend) · `Alinea-OpenClaw` (skills/MCP). Infra (Hermes/Zero/Huly) = compose versionado en `Alinea-OpenClaw/infra/`.
+- **Repos:** `AlineaCopilot-Core` (Rust) · `Alinea-Copilot` (frontend) · `Alinea-OpenClaw` (skills/MCP). Infra (Hermes/Zero; Huly opcional) = compose versionado en `Alinea-OpenClaw/infra/`.
 - **Deploy OpenClaw:** `deploy-v4.sh` (re-sync + rebuild). MCPs: scripts `apply_*.sh`.
 - **Regla de oro:** un feature **no** está hecho hasta pasar su **criterio de aceptación** (§ "Checklist no-superficial"). Todo entregable → repo + carpeta (nunca solo en el chat).
 
@@ -128,14 +128,20 @@
 
 ---
 
-## 9. Huly + KB viva ↔ RAG (VPS + Core)
+## 9. Conocimiento (BlockNote) + Tareas (dnd-kit) + KB viva ↔ RAG (frontend + Core)
 
-**Construir:**
-1. Huly self-host (compose; ≥16 GB → ver hierro). **SSO:** decidir IdP (OIDC Provider en Core **o** Keycloak/Zitadel **o** provisioning sin SSO al inicio).
-2. **KB viva → RAG:** sync (webhooks Huly + job Core) que indexa los docs que los agentes deben ver, respetando ACL. KB3 normas quedan solo en el Core.
-3. Embeddings (modelo español; costo al ledger `system:kb-index`).
+> Capa humana **nativa dentro de Alinea** (Huly descartado por defecto; opcional más adelante).
 
-**Probar:** login único (si SSO) o provisioning; un agente **cita una norma de KB3**; editar un doc vivo en la UI lo deja consultable **sin re-hornear**; un rol sin permiso **no** lo recupera.
+**Construir (frontend):**
+1. **Conocimiento** `/knowledge`: integrar **BlockNote** (`@blocknote/react`, MPL-2.0; **no** paquetes XL/GPL) como editor de docs/notas; persistir el contenido (JSON/Markdown) en el Core.
+2. **Tareas** `/tasks`: **board Kanban** con **dnd-kit** (`@dnd-kit/core` + `@dnd-kit/sortable`, MIT) + componentes Arco; persistir en el Core; incluir los **todos del agente**.
+3. i18n + gating por rol en ambos.
+
+**Construir (Core):**
+4. **KB viva → RAG:** lo editado en `/knowledge` se **indexa** en el índice del Core (sqlite-vec) respetando ACL. KB3 normas quedan solo en el Core. Embeddings (modelo español; costo al ledger `system:kb-index`).
+5. Endpoints `/api/knowledge/*` y `/api/tasks/*` (CRUD scoped por identidad).
+
+**Probar:** crear un doc en `/knowledge` con BlockNote → un agente lo **cita** (RAG) **sin re-hornear**; un rol sin permiso **no** lo recupera. Crear/mover tarjetas en el board `/tasks` (drag entre columnas) persiste; un agente puede crear/leer tareas vía API; un usuario sin acceso al proyecto **no** ve esas tareas.
 
 ---
 
@@ -165,7 +171,7 @@
 
 Implementar los módulos de §13 del Blueprint (todos role-gated, i18n):
 - Home con **3 agent spaces** (Copilot/OpenClaw/Hermes) + selector de modelo + override calidad.
-- `/projects`, `/knowledge`, `/mail`, `/tasks`, `/settings/agents` (Command Center), `/settings/usage`, `/settings/users` (roles), `/settings/model` (router/override), **centro de notificaciones**, visor DXF.
+- `/projects`, `/knowledge` (**BlockNote**), `/mail`, `/tasks` (**board dnd-kit**), `/settings/agents` (Command Center), `/settings/usage`, `/settings/users` (roles), `/settings/model` (router/override), **centro de notificaciones**, visor DXF.
 - **Estados vacíos/denegado claros** (qué hacer cuando el ACL deniega). Onboarding que presente los 3 motores y los proyectos.
 
 **Probar:** un member ve solo lo suyo; un admin ve Command Center/Consumos/Usuarios; un denegado ve un mensaje claro (no un error técnico); las notificaciones avisan "borrador listo / fix pendiente / presupuesto excedido".
@@ -189,5 +195,5 @@ Un feature NO está hecho si:
 - **Persistencia:** todo plan/guía/blueprint → repo (`Alinea-OpenClaw/fase2/` + este repo) + push.
 
 ## Reparto Claude / Cursor
-- **Claude Code:** Core (Rust) + agentes/skills (OpenClaw/Hermes) + integración Zero/Huly + infra VPS. (Estas guías son las instrucciones al 100%.)
+- **Claude Code:** Core (Rust) + agentes/skills (OpenClaw/Hermes) + integración Zero (+ Huly opcional) + infra VPS. (Estas guías son las instrucciones al 100%.)
 - **Cursor:** toda la UI (§12) + PRs acotados del Core (p. ej. `DELETE user`).
