@@ -18,6 +18,7 @@
 | **Hermes** | Servicio aparte en el mismo VPS que **mejora UX y repara skills** (supervisor); se conecta como agente remoto | Servicio Hermes + Core (gateway) + Frontend (command center) | Media-Alta |
 | **Agentic Mail** | Completo: insights de contactos, prefiltro/triage, respuestas profesionalizadas. **IMAP/SMTP** para integrar cualquier proveedor | Skill/MCP (OpenClaw o Core) + creds por usuario | Alta |
 | **Todos / Knowledge** | Producto tipo **Notion**: tareas + docs + **base de conocimiento visible** y consultable por agentes; conecta cualquier API | Core (módulo workspace/KB) + Frontend (módulo nuevo) | Alta |
+| **Proyectos + carpetas cloud** | **Proyectos persistentes** estilo Claude (docs/contexto/chats) + carpetas **Zoho WorkDrive**; unificar el "Work in a project" hoy escondido en WebUI | Core (entidad proyecto) + Frontend + conector WorkDrive | Alta |
 | **Visor DXF** | **DXF** (no DWG): visor + **medición** para asesores/técnicos sin AutoCAD | Frontend (cliente) | Media |
 | **Consumos $** | Atribución de **$/tokens por usuario** a través de **3 motores** (Copilot/OpenClaw/Hermes) vía ledger unificado | Core (ledger + reporte de agentes) + Frontend (panel) | Alta |
 | **Command Center** | Panel de gestión de agentes/gateways (montar `RemoteAgentManagement` y extender) | Frontend + Core | Media |
@@ -192,6 +193,8 @@ sequenceDiagram
 
 **Encaje por repo:** Core (módulo workspace/KB + ACL + búsqueda/embeddings) + Frontend (módulo Notion-like) + conectores (MCP).
 
+> Relacionado: **§4.8 Proyectos** es el **contenedor** de todo esto (un proyecto agrupa tareas + docs + conocimiento + chats).
+
 **Dudas restantes:**
 - ¿KB **propia** (almacén en Core con búsqueda/embeddings) o **integración** con Notion/Zoho como backend?
 - ¿Edición de KB desde la UI escribe de vuelta a `KB3` (repo OpenClaw) o a un almacén separado del Core? (afecta el flujo de "hornear" con Docker).
@@ -258,6 +261,43 @@ flowchart LR
 **Dudas restantes:**
 - ¿Qué métricas/health quieres ver por agente (latencia, tasa de error, tareas activas)?
 - ¿El command center también dispara acciones (reiniciar gateway, recargar skills)?
+
+---
+
+### 4.8 Proyectos (estilo Claude Projects) + carpetas cloud (Zoho WorkDrive)
+
+**Pedido:** "carpetas de proyectos" como **Claude Projects** (un proyecto con documentos/contexto que la IA usa entre chats) y carpetas traídas de **Zoho WorkDrive**, etc. Sensación de que "está escondido".
+
+**Qué existe hoy (y por qué se siente escondido):**
+- Hay un selector "**Work in a project**" en la home (`GuidWorkspaceFootnote.tsx`): elige una **carpeta de trabajo por conversación** (`workspaceDir`) donde el agente opera, con "recientes" en localStorage.
+- ⚠️ **Limitación clave:** usa el **diálogo nativo** (`ipcBridge.dialog.showOpen`), que **solo funciona en desktop (Electron)**. En **WebUI** queda inservible/escondido → por eso se construyó aparte el `DirectorySelectionModal` (browse/mkdir vía `/api/fs/*` con root por usuario). **No están unificados.**
+- Es una **carpeta efímera por chat**, NO un **Proyecto persistente** con documentos/contexto reutilizable entre chats (lo que pides estilo Claude).
+
+**Qué falta (la decisión):**
+- **Proyecto como entidad persistente** (no por chat): nombre, descripción, **documentos/carpetas asociados**, **contexto/instrucciones** del proyecto, y los **chats** que le pertenecen. La IA usa los docs del proyecto como contexto (RAG) — igual que Claude Projects.
+- **Carpetas cloud:** un proyecto puede mapear a una carpeta **local** o a **Zoho WorkDrive** (u otro cloud) vía API; el agente lee/escribe ahí.
+- **Unificar** el selector WebUI/desktop: que "Work in a project" use el mismo picker `/api/fs/*` en WebUI.
+
+**Relación con otras piezas:**
+- Es el **contenedor** natural del módulo Notion-like/KB (§4.4): Proyecto = tareas + docs + conocimiento + chats.
+- **Segregación (§6):** los proyectos se **scopean por usuario/rol** (un técnico no ve el proyecto de gerencia). Las carpetas WorkDrive heredan permisos por proyecto/rol.
+- **Conectores:** WorkDrive es el primer conector de "carpetas"; mismo framework que otros (Drive, etc.).
+
+```mermaid
+flowchart LR
+  P[Proyecto Alinea<br/>docs + contexto + chats] --> CTX[Contexto/RAG para agentes]
+  P --> FOLD{Carpeta del proyecto}
+  FOLD -->|local| FS[/api/fs por usuario/]
+  FOLD -->|cloud| WD[Zoho WorkDrive API]
+  CTX --> AG[Agente scoped por user_id + rol]
+  AG --> FOLD
+```
+
+**Dudas restantes:**
+- ¿Proyecto = entidad nueva en el Core (tabla `projects` + relación chats/docs), o se apoya 100% en Zoho WorkDrive como backend de carpetas?
+- ¿Los documentos del proyecto alimentan automáticamente la KB/RAG del proyecto (contexto), como Claude Projects?
+- ¿WorkDrive por usuario (OAuth) o cuenta de org compartida con permisos por proyecto?
+- ¿Unificamos ya el "Work in a project" para que funcione en WebUI (mismo picker `/api/fs/*`)?
 
 ---
 
@@ -336,7 +376,8 @@ flowchart TB
 - **Hermes** wiring como agente remoto + supervisor (§4.2).
 - **Agentic Mail** (IMAP/SMTP, creds por usuario, triage/insights/borradores) (§4.3).
 
-**Fase D — Knowledge y documentos:**
+**Fase D — Knowledge, proyectos y documentos:**
+- **Proyectos persistentes + carpetas cloud (Zoho WorkDrive)** (§4.8); **unificar** el "Work in a project" para que funcione en WebUI.
 - **Módulo Notion-like + KB visible** y consultable por agentes con ACL (§4.4) — incluye visibilizar `KB3`.
 - **Visor DXF** con medición (§4.5). Confirmar preview/descarga XLSX/DOCX (infra ya existe).
 
@@ -352,7 +393,7 @@ flowchart TB
 - GLM(z.ai)+MiniMax con router + documentos diseñados por plantilla · Hermes = servicio supervisor remoto · Mail completo por IMAP · Todos = producto Notion-like + KB visible · DXF (no DWG) con medición para no-AutoCAD · Consumos en $ por usuario · Command Center sí · Core PR #2 merge OK.
 
 **Dudas abiertas clave (para responder con Claude Code):**
-- Tipos de documento + plantillas (§4.1) · autonomía/UI de Hermes (§4.2) · IMAP vs OAuth + dónde viven insights (§4.3) · KB propia vs Notion/Zoho + escritura a `KB3` (§4.4) · medición DXF alcance (§4.5) · llaves Alinea vs propias para consumo (§4.6) · **modelo de roles/ACL y propagación de identidad en el gateway (§6)** ← el más estructural.
+- Tipos de documento + plantillas (§4.1) · autonomía/UI de Hermes (§4.2) · IMAP vs OAuth + dónde viven insights (§4.3) · KB propia vs Notion/Zoho + escritura a `KB3` (§4.4) · medición DXF alcance (§4.5) · llaves Alinea vs propias para consumo (§4.6) · **proyectos: entidad propia vs WorkDrive como backend + unificar picker en WebUI (§4.8)** · **modelo de roles/ACL y propagación de identidad en el gateway (§6)** ← el más estructural.
 
 ---
 
@@ -365,6 +406,7 @@ flowchart TB
 | Preview / viewers (DXF) | `common/types/office/preview.ts` (`PreviewContentType`), `Preview/fileUtils.ts`, `Preview/components/PreviewPanel/PreviewPanel.tsx`, `Preview/components/viewers/*`, `OfficeWatchViewer.tsx` |
 | Office preview APIs | `ipcBridge.ts` (`wordPreview`, `excelPreview`, `pptPreview`) + Core `/api/*-preview/start` |
 | Cron / scheduled (mail/todos) | `ipcBridge.ts` (`cron`, `ICronJob`), `pages/cron/ScheduledTasksPage/*` |
+| Proyectos / carpetas (hoy escondido) | `pages/guid/components/GuidWorkspaceFootnote.tsx` (native dialog → solo desktop), `components/workspace` (recientes), `components/settings/DirectorySelectionModal.tsx` (WebUI `/api/fs/*`), `pages/conversation/Workspace/*` |
 | Consumo (tokens hoy) | `common/config/storage.ts` (`TokenUsageData`), `ContextUsageIndicator.tsx`, `useAcpMessage.ts`, `useAionrsMessage.ts` |
 | Auth / roles | `hooks/context/AuthContext.tsx` (`AuthUser.role`), panel admin `pages/settings/UsersSettings/*` |
 | OpenClaw agent space (UI) | `pages/guid/components/OpenClawAgentSpace.tsx` |
