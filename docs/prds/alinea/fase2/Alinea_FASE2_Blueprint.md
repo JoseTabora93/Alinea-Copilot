@@ -297,6 +297,26 @@ No es solo chat. Mapa de módulos (todos **role-gated** por §5.2):
 
 **Principios UI:** i18n en todo (en-US + zh-CN), gating por rol, estados vacíos/errores claros (qué hacer cuando el ACL deniega), y onboarding que muestre los 3 motores y los proyectos.
 
+### 13.1 Cómo se integra con la app actual (NO es una app nueva)
+
+Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el mismo *shell* (sidebar `Layout.tsx`, `HashRouter` en `Router.tsx`, `SettingsPageWrapper`/`SettingsSider`, `AuthContext` para gating por rol, `ipcBridge`, y el proxy `web-host`). El **mismo** bundle React sirve desktop (Electron) y WebUI. Reparto por módulo:
+
+| Módulo | Estado | Punto de integración concreto |
+|---|---|---|
+| Home / 3 agent spaces | **Extiende** | `/guid` (GuidPage) ya tiene Copilot + OpenClaw space → se **agrega el space de Hermes** y el selector de modelo/override. |
+| Proyectos | **Nuevo** | Ruta `/projects` + entrada en el sidebar de `Layout.tsx`; **evoluciona** el "Work in a project" (`GuidWorkspaceFootnote.tsx`). Reusa `DirectorySelectionModal` (`/api/fs/*`). |
+| Conocimiento (KB) | **Nuevo** | Ruta `/knowledge` + sidebar; reusa los viewers de markdown/preview. Visibiliza la KB (hoy oculta). |
+| Correo | **Nuevo** | Ruta `/mail` + sidebar. |
+| Tareas | **Extiende** | `/scheduled` (cron, ya existe) + opcional Huly embed. |
+| Command Center | **Extiende** | `/settings/agent`: montar `RemoteAgentManagement.tsx` (hoy huérfano). |
+| Consumos | **Nuevo (tab Settings)** | `/settings/usage` dentro del `SettingsPageWrapper`. |
+| Usuarios / Roles | **Extiende** | `/settings/users` (panel ya construido) + roles. |
+| Proveedores / Router | **Extiende** | `/settings/model` (ya existe) + override de calidad. |
+| Notificaciones | **Nuevo (global)** | Campana en `Titlebar`/`Layout`, sobre el WS de `ipcBridge`. |
+| Visor DXF | **Extiende** | Panel de preview: nuevo `PreviewContentType` + viewer (no pantalla aparte). |
+
+> Resumen: **Command Center, Usuarios, Proveedores, Tareas, Home y DXF son extensiones** de lo que ya existe; **Proyectos, Conocimiento, Correo, Consumos y Notificaciones son rutas/entradas nuevas** en el **mismo** sidebar/router. Cero apps paralelas. La diferencia de fondo es invisible al usuario: el Core gana identidad/RBAC/RAG/ledger por debajo.
+
 ---
 
 ## 14. Hierro / infra
