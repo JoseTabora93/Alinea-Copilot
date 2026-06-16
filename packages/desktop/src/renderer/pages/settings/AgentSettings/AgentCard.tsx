@@ -8,8 +8,9 @@ import React from 'react';
 import { Avatar, Button, Switch, Typography } from '@arco-design/web-react';
 import { Delete, EditTwo, Robot } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
-import { resolveAgentLogo } from '@/renderer/utils/model/agentLogo';
+import { displayEngineName, resolveAgentLogo } from '@/renderer/utils/model/agentLogo';
 import { resolveExtensionAssetUrl } from '@/renderer/utils/platform';
+import alineaMark from '@renderer/assets/logos/brand/alinea-mark.svg';
 
 type DetectedAgent = {
   agent_type: string;
@@ -55,27 +56,33 @@ const AgentCard: React.FC<AgentCardProps> = (props) => {
 
   if (props.type === 'detected') {
     const { agent, onGoToChat } = props;
+    // Brand: surface the built-in `aionrs` engine as "Copilot" with the Alinea
+    // mark instead of the backend's "Aion CLI" label + legacy logo.
+    const isAionrs = agent.agent_type === 'aionrs' || agent.backend === 'aionrs';
+    const displayName = displayEngineName(agent.name);
     const extensionAvatar = resolveExtensionAssetUrl(agent.isExtension ? agent.avatar : undefined);
     const logo =
       extensionAvatar ||
-      resolveAgentLogo({
-        icon: agent.icon,
-        backend: agent.backend || agent.agent_type,
-        custom_agent_id: agent.custom_agent_id,
-        isExtension: agent.isExtension,
-      });
+      (isAionrs
+        ? alineaMark
+        : resolveAgentLogo({
+            icon: agent.icon,
+            backend: agent.backend || agent.agent_type,
+            custom_agent_id: agent.custom_agent_id,
+            isExtension: agent.isExtension,
+          }));
 
     return (
       <div className='flex min-h-[154px] flex-col rounded-12px border border-solid border-[var(--color-border-2)] bg-[var(--color-bg-2)] p-12px transition-colors hover:border-[var(--color-border-3)]'>
         <div className='mb-10px flex justify-center'>
           <Avatar size={40} shape='square' style={{ flexShrink: 0, backgroundColor: 'transparent' }}>
-            {logo ? <img src={logo} alt={agent.name} className='h-full w-full object-contain' /> : '🤖'}
+            {logo ? <img src={logo} alt={displayName} className='h-full w-full object-contain' /> : '🤖'}
           </Avatar>
         </div>
 
         <div className='mb-10px flex-1 text-center'>
           <Typography.Text className='block text-13px font-medium leading-18px line-clamp-2'>
-            {agent.name}
+            {displayName}
           </Typography.Text>
           <Typography.Text className='mt-4px block text-11px text-t-secondary'>
             {t('settings.agentManagement.detected')}
