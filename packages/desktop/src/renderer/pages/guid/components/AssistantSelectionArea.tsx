@@ -5,6 +5,7 @@
  */
 
 import { CUSTOM_AVATAR_IMAGE_MAP } from '../constants';
+import HermesAgentSpace from './HermesAgentSpace';
 import OpenClawAgentSpace from './OpenClawAgentSpace';
 import styles from '../index.module.css';
 import type { AvailableAgent, EffectiveAgentInfo } from '../types';
@@ -203,6 +204,12 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
   return (
     <div className='mt-32px w-full'>
       <OpenClawAgentSpace
+        onPick={(prompt) => {
+          onSetInput(prompt);
+          onFocusInput();
+        }}
+      />
+      <HermesAgentSpace
         onPick={(prompt) => {
           onSetInput(prompt);
           onFocusInput();
