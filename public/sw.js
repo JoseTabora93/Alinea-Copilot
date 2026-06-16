@@ -1,8 +1,20 @@
-// Bumped from v1: the v1 networkFirst fallback returned OFFLINE_PAGE_URL
-// (index.html) for failed script requests, causing "module script MIME text/html"
-// errors when the server was down or served a different asset hash. The v2
-// activate handler deletes v1, flushing any poisoned cached entries.
-const CACHE_NAME = 'aionui-webui-v2';
+// CACHE_NAME is versioned per build so every deploy ships a byte-different
+// sw.js. The browser then detects the new worker, installs it (skipWaiting),
+// and the activate handler below purges old caches and reloads open tabs — so
+// users never get stuck on a stale build (e.g. the old "AionCLI" UI) after a
+// deploy.
+//
+// `__SW_BUILD_VERSION__` is replaced at build time by swVersionStampPlugin in
+// packages/desktop/electron.vite.config.ts with `<appVersion>-<gitSha|ts>`. If
+// the stamp step is skipped (e.g. a raw dev serve of public/), the literal
+// placeholder is left in place — still a valid, constant cache name.
+//
+// History: v1's networkFirst fallback returned index.html for failed script
+// requests, causing "module script MIME text/html" errors; the activate handler
+// deletes any non-matching cache (including legacy `aionui-webui-*`), flushing
+// poisoned entries.
+const CACHE_VERSION = '__SW_BUILD_VERSION__';
+const CACHE_NAME = `alinea-webui-${CACHE_VERSION}`;
 const NON_CACHEABLE_PATHS = new Set(['/qr-login']);
 const OFFLINE_PAGE_URL = new URL('./index.html', self.location.href).toString();
 const PRECACHE_URLS = [
