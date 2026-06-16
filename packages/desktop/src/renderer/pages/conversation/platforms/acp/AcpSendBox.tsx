@@ -40,6 +40,7 @@ import type { TeamSendBoxRuntime } from '@/renderer/pages/team/components/teamSe
 import { allSupportedExts } from '@/renderer/services/FileService';
 import { iconColors } from '@/renderer/styles/colors';
 import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
+import { displayEngineName } from '@/renderer/utils/model/agentLogo';
 import { mergeFileSelectionItems } from '@/renderer/utils/file/fileSelection';
 import { buildDisplayMessage } from '@/renderer/utils/file/messageFiles';
 import { Message, Tag } from '@arco-design/web-react';
@@ -641,7 +642,9 @@ Please check your local CLI tool authentication status`,
         loading={teamRuntime?.loading ?? isBusy}
         disabled={false}
         placeholder={t('acp.sendbox.placeholder', {
-          backend: agent_name || backend,
+          // displayEngineName only rebrands the built-in aionrs engine ("Aion CLI"
+          // → "Copilot"); real ACP agents (OpenClaw, Claude Code, …) pass through.
+          backend: displayEngineName(agent_name || backend),
           defaultValue: `Send message to {{backend}}...`,
         })}
         onStop={effectiveHandleStop}

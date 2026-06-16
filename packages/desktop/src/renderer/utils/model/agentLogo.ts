@@ -79,6 +79,19 @@ function isDarkTheme(): boolean {
  * @param agent - Agent 名称（不区分大小写）/ Agent name (case-insensitive)
  * @returns Logo 路径，如果不存在则返回 null / Logo path, or null if not found
  */
+/**
+ * Brand display name for the built-in execution engine (`aionrs`). The backend
+ * labels it "Aion CLI"; we present it as "Copilot" (it's the normal model-chat
+ * engine). Other agent names pass through unchanged.
+ */
+export const ALINEA_ENGINE_NAME = 'Copilot';
+
+export function displayEngineName(name?: string | null): string {
+  const v = (name || '').trim().toLowerCase();
+  if (!v || v === 'aionrs' || v === 'aioncli' || v === 'aion cli') return ALINEA_ENGINE_NAME;
+  return name as string;
+}
+
 export function getAgentLogo(agent: string | undefined | null): string | null {
   if (!agent || typeof agent !== 'string') return null;
   const key = agent.toLowerCase() as keyof typeof AGENT_LOGO_PATH_MAP;
