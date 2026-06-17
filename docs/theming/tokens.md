@@ -1,9 +1,36 @@
 # Theme Tokens Reference / 主题语义 Token 参考
 
-This is the canonical list of semantic design tokens used by AionUi's theming system.
+This is the canonical list of semantic design tokens used by Alinea Copiloto's theming system.
 A **Theme** (`packages/desktop/src/common/theme/types.ts`) can override any of these via its
 optional `tokens` map, or via raw `css`. Built-in `Light`/`Dark` rely on the base stylesheet
 below (driven by `appearance` → `data-theme`); decorative & user themes use `css`.
+
+> **Esquema actual: Alinea — Verde Sabio (Sage Green).** Los valores reales y **única fuente de
+> verdad** están en `packages/desktop/src/renderer/styles/themes/default-color-scheme.css`. Las
+> tablas de abajo reflejan esa paleta. Como todo componente usa tokens semánticos (vía UnoCSS),
+> **toda la app sigue estos colores automáticamente** — no hay colores hardcodeados de marca.
+
+## 🎨 White-label / Rebranding para otro cliente
+
+Para cambiar la marca a otro cliente, **edita un solo archivo**:
+`packages/desktop/src/renderer/styles/themes/default-color-scheme.css` (bloques `:root` light y
+`[data-theme='dark']`). Cambia estos grupos de tokens y **toda la UI** (botones, acentos, KB,
+Command Center, sidebar, etc.) se actualiza sola, porque todo consume estos tokens:
+
+| Cambia esto                                                   | Para…                                                                                         |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `--aou-1 … --aou-10`                                          | La rampa de marca (10 pasos): superficies tintadas, barra de agentes, acentos                 |
+| `--primary` (y `--info`)                                      | Color de acción/acento principal (botones, foco, activos)                                     |
+| `--brand`, `--brand-light`, `--brand-hover`                   | Acentos de marca (logo-adyacentes, hovers de marca)                                           |
+| `--bg-base … --bg-10`, `--bg-hover`, `--bg-active`            | Escala de superficies/fondos neutros                                                          |
+| `--text-primary`, `--text-secondary`, `--text-disabled`       | Jerarquía de texto                                                                            |
+| `--border-base`, `--border-light`                             | Bordes/divisores                                                                              |
+| `--message-*`, `--workspace-btn-bg`, `--color-guid-agent-bar` | Tintes de componentes específicos                                                             |
+| Logo/assets                                                   | `packages/desktop/src/renderer/assets/logos/brand/*` (mark/icon/pattern) + PWA `public/pwa/*` |
+
+**Recomendación:** mantener los grupos coherentes (p. ej. `--primary` = `--brand` = `--aou-5`). Para
+probar un cliente sin tocar el base, se puede crear un **Theme** con `tokens` (ver "Authoring a theme").
+Regla de oro (AGENTS.md): **nunca** hardcodear colores en componentes; usar siempre tokens/clases UnoCSS.
 
 > 这是 AionUi 主题系统的语义 Token 权威清单。一个 **Theme** 可以通过可选的 `tokens` 映射
 > 或 `css` 字段覆盖这些变量。内置 `Light`/`Dark` 依赖下面的基底样式表(由 `appearance` →
@@ -27,93 +54,95 @@ A token written without an explicit dark value inherits whatever the base dark b
 
 A 10-step brand ramp (light→dark in light mode; the ramp **inverts** in dark mode so `--aou-1` is darkest). Used for brand-tinted surfaces, the home Agent bar, accents.
 
+_Paleta Alinea — Verde Sabio. La rampa **se invierte** en dark (aou-1 = más oscuro)._
+
 | Token      | Light     | Dark      | Purpose / 用途                        |
 | ---------- | --------- | --------- | ------------------------------------- |
-| `--aou-1`  | `#eff0f6` | `#2a2a2a` | Lightest brand tint / surface wash    |
-| `--aou-2`  | `#e5e7f0` | `#3d4150` | Brand tint (home Agent bar dark base) |
-| `--aou-3`  | `#d1d5e5` | `#525a77` | Brand tint                            |
-| `--aou-4`  | `#b5bcd6` | `#6a749b` | Brand tint                            |
-| `--aou-5`  | `#97a0c5` | `#838fba` | Brand mid                             |
-| `--aou-6`  | `#7583b2` | `#a1aacb` | Brand base (= `--brand` light)        |
-| `--aou-7`  | `#596590` | `#b5bcd6` | Brand strong                          |
-| `--aou-8`  | `#3f4868` | `#d1d5e5` | Brand strong                          |
-| `--aou-9`  | `#262c41` | `#e5e7f0` | Brand darkest tint                    |
-| `--aou-10` | `#0d101c` | `#eff0f6` | Brand extreme                         |
+| `--aou-1`  | `#f2f3ef` | `#282d2a` | Lightest brand tint / surface wash    |
+| `--aou-2`  | `#e5e7df` | `#343b37` | Brand tint (home Agent bar dark base) |
+| `--aou-3`  | `#d1d5c8` | `#4a5248` | Brand tint                            |
+| `--aou-4`  | `#b8beaa` | `#606a5e` | Brand tint                            |
+| `--aou-5`  | `#a6ad95` | `#7a8573` | Brand mid (Verde Sabio = `--brand`)   |
+| `--aou-6`  | `#8d9480` | `#a6ad95` | Brand base                            |
+| `--aou-7`  | `#6e7864` | `#b8beaa` | Brand strong                          |
+| `--aou-8`  | `#505947` | `#d1d5c8` | Brand strong                          |
+| `--aou-9`  | `#333a2e` | `#e5e7df` | Brand darkest tint                    |
+| `--aou-10` | `#1a1f17` | `#f2f3ef` | Brand extreme                         |
 
 ### Backgrounds / 背景 (`--bg-*`)
 
 Layered surface scale — higher number = stronger/darker separation in light mode.
 
-| Token         | Light     | Dark      | Purpose / 用途                                          |
-| ------------- | --------- | --------- | ------------------------------------------------------- |
-| `--bg-base`   | `#ffffff` | `#0e0e0e` | App primary background (bg-0) / 主背景                  |
-| `--bg-1`      | `#f9fafb` | `#1a1a1a` | Secondary surface (panels, cards) / 次级背景            |
-| `--bg-2`      | `#f2f3f5` | `#262626` | Tertiary surface (nested cards, active line) / 三级背景 |
-| `--bg-3`      | `#e5e6eb` | `#333333` | Borders / dividers / 边框分隔                           |
-| `--bg-4`      | `#c9cdd4` | `#404040` | Stronger divider / muted fill                           |
-| `--bg-5`      | `#adb4c1` | `#4d4d4d` | Muted element                                           |
-| `--bg-6`      | `#86909c` | `#5a5a5a` | Disabled / secondary text on fills / 禁用               |
-| `--bg-8`      | `#4e5969` | `#737373` | Strong neutral                                          |
-| `--bg-9`      | `#1d2129` | `#a6a6a6` | Near-inverse neutral                                    |
-| `--bg-10`     | `#0c0e12` | `#d9d9d9` | Extreme neutral                                         |
-| `--bg-hover`  | `#f3f4f6` | `#1f1f1f` | Hover background (between bg-1/bg-2) / 悬停             |
-| `--bg-active` | `#e5e6eb` | `#2d2d2d` | Active / pressed background / 激活按下                  |
+| Token         | Light     | Dark      | Purpose / 用途                                   |
+| ------------- | --------- | --------- | ------------------------------------------------ |
+| `--bg-base`   | `#ffffff` | `#1e2226` | App primary background (bg-0) — Blanco Papel     |
+| `--bg-1`      | `#f2f1ec` | `#282d31` | Secondary surface — Arena Suave / sidebar (dark) |
+| `--bg-2`      | `#e8e7e1` | `#333940` | Tertiary surface (nested cards, active line)     |
+| `--bg-3`      | `#d8d7d1` | `#3f464e` | Borders / dividers / 边框分隔                    |
+| `--bg-4`      | `#c0bfb9` | `#4d5560` | Stronger divider / muted fill                    |
+| `--bg-5`      | `#a8a7a1` | `#5c6470` | Muted element                                    |
+| `--bg-6`      | `#88877f` | `#6b7480` | Disabled / secondary text on fills / 禁用        |
+| `--bg-8`      | `#585751` | `#8f9aa6` | Strong neutral                                   |
+| `--bg-9`      | `#282d31` | `#b8c0c8` | Near-inverse neutral (Gris Profundo)             |
+| `--bg-10`     | `#141719` | `#e0e4e8` | Extreme neutral                                  |
+| `--bg-hover`  | `#edecea` | `#2f3438` | Hover background (between bg-1/bg-2) / 悬停      |
+| `--bg-active` | `#d8d7d1` | `#3a4248` | Active / pressed background / 激活按下           |
 
 ### Text / 文字 (`--text-*`, `--color-text-1`)
 
-| Token              | Light     | Dark      | Purpose / 用途                                                                                                 |
-| ------------------ | --------- | --------- | -------------------------------------------------------------------------------------------------------------- |
-| `--text-primary`   | `#000000` | `#ffffff` | Primary text / 主要文字                                                                                        |
-| `--color-text-1`   | `#000000` | `#ffffff` | Arco primary text — kept aligned with `--text-primary`                                                         |
-| `--text-secondary` | `#454d5f` | `#ced3da` | Secondary text (tuned for ~7.5:1 / ~11:1 contrast) / 次要文字                                                  |
-| `--text-disabled`  | `#c9cdd4` | `#737373` | Disabled text / 禁用文字                                                                                       |
-| `--text-0`         | `#000000` | `#ffffff` | "Pure black" text — flips to white in dark / 纯黑文字 · ⚠️ **currently unused** (legacy; use `--text-primary`) |
-| `--text-white`     | `#ffffff` | `#ffffff` | Always-white text (on colored fills) / 纯白文字                                                                |
+| Token              | Light     | Dark      | Purpose / 用途                                                                 |
+| ------------------ | --------- | --------- | ------------------------------------------------------------------------------ |
+| `--text-primary`   | `#1a1f17` | `#f2f3ef` | Primary text / 主要文字                                                        |
+| `--color-text-1`   | `#1a1f17` | `#f2f3ef` | Arco primary text — kept aligned with `--text-primary`                         |
+| `--text-secondary` | `#454d3f` | `#b8c0c8` | Secondary text / 次要文字                                                      |
+| `--text-disabled`  | `#c0bfb9` | `#5c6470` | Disabled text / 禁用文字                                                       |
+| `--text-0`         | `#1a1f17` | `#f2f3ef` | "Pure black" text — flips in dark / 纯黑文字 · ⚠️ legacy; use `--text-primary` |
+| `--text-white`     | `#ffffff` | `#ffffff` | Always-white text (on colored fills) / 纯白文字                                |
 
 ### Semantic state / 语义状态
 
 | Token       | Light     | Dark      | Purpose / 用途                                                                          |
 | ----------- | --------- | --------- | --------------------------------------------------------------------------------------- |
-| `--primary` | `#165dff` | `#4d9fff` | Primary action / accent / 主色                                                          |
+| `--primary` | `#a6ad95` | `#b8beaa` | Primary action / accent — **Verde Sabio** / 主色                                        |
 | `--success` | `#00b42a` | `#23c343` | Success / 成功                                                                          |
 | `--warning` | `#ff7d00` | `#ff9a2e` | Warning / 警告                                                                          |
 | `--danger`  | `#f53f3f` | `#f76560` | Error / destructive / 危险                                                              |
-| `--info`    | `#165dff` | `#4d9fff` | Informational (= primary) / 信息 · ⚠️ **currently unused** — components use `--primary` |
+| `--info`    | `#a6ad95` | `#b8beaa` | Informational (= primary) / 信息 · ⚠️ **currently unused** — components use `--primary` |
 
 ### Borders / 边框
 
 | Token              | Light         | Dark      | Purpose / 用途                                                                               |
 | ------------------ | ------------- | --------- | -------------------------------------------------------------------------------------------- |
-| `--border-base`    | `#e5e6eb`     | `#333333` | Default border / 基础边框                                                                    |
-| `--border-light`   | `#f2f3f5`     | `#262626` | Subtle border / 浅色边框                                                                     |
-| `--border-special` | `var(--bg-3)` | `#60677e` | Emphasized/special border / 特殊边框 · ⚠️ **currently unused** (legacy; use `--border-base`) |
+| `--border-base`    | `#d8d7d1`     | `#3f464e` | Default border / 基础边框                                                                    |
+| `--border-light`   | `#e8e7e1`     | `#333940` | Subtle border / 浅色边框                                                                     |
+| `--border-special` | `var(--bg-3)` | `#4d5560` | Emphasized/special border / 特殊边框 · ⚠️ **currently unused** (legacy; use `--border-base`) |
 
 ### Brand accents / 品牌强调
 
 | Token           | Light     | Dark      | Purpose / 用途                           |
 | --------------- | --------- | --------- | ---------------------------------------- |
-| `--brand`       | `#7583b2` | `#a1aacb` | Brand color / 品牌色                     |
-| `--brand-light` | `#eff0f6` | `#3d4150` | Brand-tinted background / 品牌浅(深)背景 |
-| `--brand-hover` | `#b5bcd6` | `#6a749b` | Brand hover / 品牌悬停                   |
+| `--brand`       | `#a6ad95` | `#a6ad95` | Brand color — **Verde Sabio**            |
+| `--brand-light` | `#f2f3ef` | `#343b37` | Brand-tinted background / 品牌浅(深)背景 |
+| `--brand-hover` | `#b8beaa` | `#7a8573` | Brand hover / 品牌悬停                   |
 
 ### Fills & inverse / 填充与反色
 
 | Token                   | Light     | Dark                     | Purpose / 用途                             |
 | ----------------------- | --------- | ------------------------ | ------------------------------------------ |
-| `--fill`                | `#f7f8fa` | `#1a1a1a`                | Generic fill / 填充                        |
+| `--fill`                | `#f7f7f4` | `#1e2226`                | Generic fill / 填充                        |
 | `--fill-0`              | `#ffffff` | `rgba(255,255,255,0.08)` | Fill level 0 (translucent in dark) / 填充0 |
 | `--fill-white-to-black` | `#ffffff` | `#000000`                | Surface that flips white↔black by mode     |
-| `--dialog-fill-0`       | `#ffffff` | `#333333`                | Dialog/modal fill / 对话框填充             |
-| `--inverse`             | `#ffffff` | `#ffffff`                | Inverse (black/white switch) / 反色        |
+| `--dialog-fill-0`       | `#ffffff` | `#3f464e`                | Dialog/modal fill / 对话框填充             |
+| `--inverse`             | `#ffffff` | `#f2f3ef`                | Inverse (black/white switch) / 反色        |
 
 ### Component-specific / 组件专用
 
 | Token                    | Light     | Dark           | Purpose / 用途                                         |
 | ------------------------ | --------- | -------------- | ------------------------------------------------------ |
-| `--message-user-bg`      | `#e9efff` | `#1e2a3a`      | User chat bubble background / 用户消息气泡             |
-| `--message-tips-bg`      | `#f0f4ff` | `#1a2333`      | Tip/notice background / 提示信息背景                   |
-| `--workspace-btn-bg`     | `#eff0f1` | `#1f1f1f`      | Workspace button background / 工作区按钮               |
-| `--color-guid-agent-bar` | `#eaecf7` | `var(--aou-2)` | Home Agent-selector bar background / 首页 Agent 选择条 |
+| `--message-user-bg`      | `#edf0e8` | `#2a3230`      | User chat bubble background (sage tint) / 用户消息气泡 |
+| `--message-tips-bg`      | `#f0f2ec` | `#252d2b`      | Tip/notice background / 提示信息背景                   |
+| `--workspace-btn-bg`     | `#eeede8` | `#2a2f33`      | Workspace button background / 工作区按钮               |
+| `--color-guid-agent-bar` | `#edf0e8` | `var(--aou-2)` | Home Agent-selector bar background / 首页 Agent 选择条 |
 
 ### Arco `--color-*` aliases / Arco 别名
 

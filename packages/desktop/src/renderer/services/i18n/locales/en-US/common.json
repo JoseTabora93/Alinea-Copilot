@@ -1,4 +1,14 @@
 {
+  "knowledge": {
+    "navLabel": "Knowledge",
+    "title": "Knowledge",
+    "subtitle": "Your team brain — browse the knowledge your agents use.",
+    "searchPlaceholder": "Search pages…",
+    "empty": "Select a page to read",
+    "emptyHint": "Pick a page from the tree on the left.",
+    "noResults": "No pages match your search.",
+    "prototypeNotice": "Preview with sample content — will connect to the live brain (gbrain)."
+  },
   "send": "Send",
   "cancel": "Cancel",
   "save": "Save",
