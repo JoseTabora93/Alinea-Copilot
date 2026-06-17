@@ -23,7 +23,21 @@ import {
   Typography,
 } from '@arco-design/web-react';
 import AionModal from '@/renderer/components/base/AionModal';
-import { Attention, Edit, Plus, ReduceOne, Robot, Speed } from '@icon-park/react';
+import alineaMark from '@renderer/assets/logos/brand/alinea-mark.svg';
+import {
+  AlarmClock,
+  Attention,
+  BookOne,
+  Components,
+  Dashboard,
+  Edit,
+  Funds,
+  Plus,
+  ReduceOne,
+  Robot,
+  Speed,
+  Tool,
+} from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -443,27 +457,124 @@ const RemoteAgentManagement: React.FC = () => {
     await mutate();
   }, [mutate]);
 
+  const list = agents || [];
+  const kpis = [
+    {
+      id: 'gateways',
+      label: t('settings.commandCenter.kpiGateways'),
+      value: list.length,
+      icon: <Components theme='outline' size='18' />,
+      tone: 'var(--brand)',
+    },
+    {
+      id: 'connected',
+      label: t('settings.commandCenter.kpiConnected'),
+      value: list.filter((a) => a.status === 'connected').length,
+      icon: <Dashboard theme='outline' size='18' />,
+      tone: 'rgb(var(--success-6))',
+    },
+    {
+      id: 'pending',
+      label: t('settings.commandCenter.kpiPending'),
+      value: list.filter((a) => a.status === 'pending').length,
+      icon: <AlarmClock theme='outline' size='18' />,
+      tone: 'rgb(var(--warning-6))',
+    },
+    {
+      id: 'issues',
+      label: t('settings.commandCenter.kpiIssues'),
+      value: list.filter((a) => a.status === 'error').length,
+      icon: <Attention theme='outline' size='18' />,
+      tone: 'rgb(var(--danger-6))',
+    },
+  ];
+  const comingSoon = [
+    {
+      id: 'health',
+      icon: <Speed theme='outline' size='18' />,
+      title: t('settings.commandCenter.capHealth'),
+      desc: t('settings.commandCenter.capHealthDesc'),
+    },
+    {
+      id: 'usage',
+      icon: <Funds theme='outline' size='18' />,
+      title: t('settings.commandCenter.capUsage'),
+      desc: t('settings.commandCenter.capUsageDesc'),
+    },
+    {
+      id: 'fixes',
+      icon: <Tool theme='outline' size='18' />,
+      title: t('settings.commandCenter.capFixes'),
+      desc: t('settings.commandCenter.capFixesDesc'),
+    },
+    {
+      id: 'logs',
+      icon: <BookOne theme='outline' size='18' />,
+      title: t('settings.commandCenter.capLogs'),
+      desc: t('settings.commandCenter.capLogsDesc'),
+    },
+  ];
+
   return (
-    <div className='flex flex-col gap-16px py-16px'>
-      <div className='flex flex-wrap items-start justify-between gap-12px'>
-        <div className='flex flex-1 flex-wrap items-center gap-x-6px gap-y-2px px-16px'>
-          <Typography.Text type='secondary' className='text-12px leading-18px text-t-secondary'>
-            {t('settings.agentManagement.remoteAgentsDescription')}
-          </Typography.Text>
-          <Link className='text-12px leading-18px' onClick={openRemoteAgentGuide}>
-            {t('settings.remoteAgent.guideAction')}
-          </Link>
+    <div className='flex flex-col gap-20px py-16px px-16px'>
+      {/* Header band */}
+      <div
+        className='flex flex-wrap items-center justify-between gap-12px rounded-16px border border-solid border-[rgba(var(--primary-6),0.18)] px-18px py-16px'
+        style={{ background: 'linear-gradient(135deg, var(--brand-light) 0%, var(--bg-1) 100%)' }}
+      >
+        <div className='flex items-center gap-12px min-w-0'>
+          <span className='flex size-40px items-center justify-center rounded-12px bg-base border border-solid border-[var(--color-border-2)] shrink-0'>
+            <img src={alineaMark} alt='' className='size-22px' />
+          </span>
+          <div className='min-w-0'>
+            <Typography.Text className='block text-16px font-600 text-t-primary leading-22px'>
+              {t('settings.commandCenter.title')}
+            </Typography.Text>
+            <Typography.Text className='block text-12px text-t-secondary leading-18px'>
+              {t('settings.commandCenter.subtitle')}
+            </Typography.Text>
+          </div>
         </div>
         <Button
-          type='outline'
+          type='primary'
           shape='round'
           size='small'
           icon={<Plus size='16' />}
           onClick={handleAdd}
-          className='rd-100px border-1 border-solid border-[var(--color-border-2)] h-34px px-14px text-t-secondary hover:text-t-primary'
+          className='!h-34px !px-16px !rounded-100px'
         >
           {t('settings.remoteAgent.add')}
         </Button>
+      </div>
+
+      {/* KPI cards */}
+      <div className='grid grid-cols-2 gap-12px md:grid-cols-4'>
+        {kpis.map((kpi) => (
+          <div
+            key={kpi.id}
+            className='flex items-center gap-12px rounded-12px border border-solid border-[var(--color-border-2)] bg-base p-14px'
+          >
+            <span
+              className='flex size-36px items-center justify-center rounded-10px bg-fill-1 shrink-0'
+              style={{ color: kpi.tone }}
+            >
+              {kpi.icon}
+            </span>
+            <div className='min-w-0'>
+              <div className='text-22px font-700 text-t-primary leading-26px'>{kpi.value}</div>
+              <div className='text-12px text-t-secondary leading-16px truncate'>{kpi.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className='flex flex-wrap items-center gap-x-6px gap-y-2px'>
+        <Typography.Text type='secondary' className='text-12px leading-18px text-t-secondary'>
+          {t('settings.agentManagement.remoteAgentsDescription')}
+        </Typography.Text>
+        <Link className='text-12px leading-18px' onClick={openRemoteAgentGuide}>
+          {t('settings.remoteAgent.guideAction')}
+        </Link>
       </div>
 
       {!agents || agents.length === 0 ? (
@@ -483,7 +594,7 @@ const RemoteAgentManagement: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <div className='grid grid-cols-1 gap-12px px-16px md:grid-cols-2 xl:grid-cols-3'>
+        <div className='grid grid-cols-1 gap-12px md:grid-cols-2 xl:grid-cols-3'>
           {agents.map((agent) => (
             <div
               key={agent.id}
@@ -548,6 +659,36 @@ const RemoteAgentManagement: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Coming soon capabilities */}
+      <div className='mt-4px'>
+        <div className='mb-10px flex items-center gap-8px'>
+          <Typography.Text className='text-13px font-600 text-t-secondary'>
+            {t('settings.commandCenter.comingSoon')}
+          </Typography.Text>
+          <span className='h-1px flex-1 bg-[var(--color-border-2)]' />
+        </div>
+        <div className='grid grid-cols-1 gap-12px sm:grid-cols-2 xl:grid-cols-4'>
+          {comingSoon.map((cap) => (
+            <div
+              key={cap.id}
+              className='relative flex flex-col gap-6px rounded-12px border border-dashed border-[var(--color-border-2)] bg-fill-1 p-14px opacity-80'
+            >
+              <span className='absolute right-10px top-10px rounded-100px bg-brand-light px-8px py-2px text-10px font-500 text-t-secondary'>
+                {t('settings.commandCenter.comingSoon')}
+              </span>
+              <span
+                className='flex size-32px items-center justify-center rounded-10px bg-base text-t-tertiary'
+                style={{ color: 'var(--brand)' }}
+              >
+                {cap.icon}
+              </span>
+              <Typography.Text className='text-13px font-600 text-t-primary leading-18px'>{cap.title}</Typography.Text>
+              <Typography.Text className='text-12px text-t-secondary leading-16px'>{cap.desc}</Typography.Text>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <RemoteAgentFormModal
         visible={modalVisible}

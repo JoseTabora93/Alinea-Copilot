@@ -966,6 +966,23 @@
     "addCustomAgent": "Добавить пользовательского агента",
     "customEmpty": "Пользовательские агенты не настроены. Нажмите «Добавить пользовательского агента» для создания."
   },
+  "commandCenter": {
+    "title": "Command Center",
+    "subtitle": "Manage and monitor your agents and gateways in one place.",
+    "kpiGateways": "Gateways",
+    "kpiConnected": "Connected",
+    "kpiPending": "Pending",
+    "kpiIssues": "Issues",
+    "comingSoon": "Coming soon",
+    "capHealth": "Live health",
+    "capHealthDesc": "Latency, errors and active tasks per agent.",
+    "capUsage": "Usage per agent",
+    "capUsageDesc": "Tokens and cost ($) per OpenClaw / Hermes / Copilot.",
+    "capFixes": "Hermes fixes",
+    "capFixesDesc": "Approve or reject skill improvements.",
+    "capLogs": "Logs & traces",
+    "capLogsDesc": "Debug multi-agent flows."
+  },
   "remoteAgent": {
     "title": "Удалённые агенты",
     "add": "Добавить",
