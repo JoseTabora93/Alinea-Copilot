@@ -519,8 +519,8 @@ const RemoteAgentManagement: React.FC = () => {
     <div className='flex flex-col gap-20px py-16px px-16px'>
       {/* Header band */}
       <div
-        className='flex flex-wrap items-center justify-between gap-12px rounded-16px border border-solid border-[rgba(var(--primary-6),0.18)] px-18px py-16px'
-        style={{ background: 'linear-gradient(135deg, var(--brand-light) 0%, var(--bg-1) 100%)' }}
+        className='flex flex-wrap items-center justify-between gap-12px rounded-16px border border-solid border-[rgba(var(--primary-6),0.30)] px-18px py-18px'
+        style={{ background: 'linear-gradient(135deg, var(--aou-5) 0%, var(--aou-3) 55%, var(--aou-2) 100%)' }}
       >
         <div className='flex items-center gap-12px min-w-0'>
           <span className='flex size-40px items-center justify-center rounded-12px bg-base border border-solid border-[var(--color-border-2)] shrink-0'>
