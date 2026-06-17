@@ -15,7 +15,7 @@
 
 1. **3 motores de IA** conviven: **Copilot** (chat con modelos, en el Core), **OpenClaw** (agentes de trabajo MEP, en el VPS) y **Hermes** (en el VPS) — y a **Hermes también se le chatea**, no solo trabaja de fondo.
 2. **Una sola identidad firmada** (`user_id`+rol+proyecto) viaja en **cada** request y **filtra todo**.
-3. **Un solo RAG compuesto** (en el Core) que **los 3 motores consultan** con esa identidad.
+3. **Un solo RAG/KB compuesto** implementado con **gbrain** (markdown + Postgres + MCP, hecho para OpenClaw/Hermes) que **los 3 motores consultan** con esa identidad.
 4. **Una sola medición de consumo** ($) que cubre los 3 motores.
 5. **Proyectos** (estilo Claude) + **carpetas Zoho WorkDrive** como contenedor de trabajo.
 6. **Una UI completa** (no solo chat): proyectos, conocimiento, correo, tareas, consumos, command center.
@@ -29,7 +29,7 @@
 | Stack | **Fijo**: Core **Rust (aioncore)**, Frontend **Electron/React/Arco**, agentes **OpenClaw** y **Hermes** + **Zero** (correo) como servicios en el VPS; **Huly opcional**. Capa humana **nativa** (BlockNote + dnd-kit). NO Next.js/Supabase/Clerk. |
 | Identidad | El Core emite por request un **token de contexto firmado** Ed25519 `{user_id, rol[], project_id?, scopes, exp, jti}`. El gateway lo propaga a OpenClaw/Hermes en **cada** mensaje. |
 | Segregación | **3 ejes combinados (AND)**: rol/etiqueta **+** ownership/membership **+** project-scope. (Ver §5 — corrige el "solo rol" del plan anterior.) |
-| RAG | **Compuesto y único** en el Core (KB3 + KB viva + project_docs), consultado por **Copilot, OpenClaw y Hermes**, con **ACL por request**. (Ver §6.) |
+| RAG / KB | **Compuesto y único**, implementado con **gbrain** (MIT, markdown + Postgres/pgvector + **MCP**; hecho para OpenClaw/Hermes). Fuentes: KB3 + KB viva + project_docs. Consultado por **Copilot, OpenClaw y Hermes** con **ACL por request**. (Ver §6 y §6.5/§6.6.) |
 | Consumos | **Llaves de Alinea vía el Core** → **un ledger** mide los 3 motores; límite **pre-flight** (antes de gastar). |
 | Hermes | **Doble rol**: (a) **agente de chat** seleccionable por el usuario; (b) **supervisor** que propone fixes de skills (admin aprueba). (Ver §8.) |
 | Mail | **Solo borradores** (human-in-the-loop). Integrar **Zero (mail-0/zero)** vía MCP; fallback IMAP por usuario. |
@@ -50,6 +50,7 @@
 | **OpenClaw** (servicio) | Ejecuta los agentes de trabajo. Se conecta como agente remoto (gateway wss+Ed25519). | VPS |
 | **Hermes** (servicio) | **Chat** (orquestador/ops copilot) **+ supervisor** que mejora skills. Mismo gateway. | VPS |
 | **Zero** (servicio) | Correo agéntico (unified inbox + MCP). | VPS |
+| **gbrain** (servicio) | **KB/RAG** (markdown + Postgres/pgvector) expuesto por **MCP**; la "capa de conocimiento" para OpenClaw/Hermes/Copilot. MIT. | VPS |
 | **Huly** (servicio) | **Opcional — descartado por defecto.** PM pesado tipo Jira+Notion; reemplazado por módulos nativos (BlockNote + dnd-kit). Sumar solo si se necesita PM avanzado y hay hierro. | VPS/box aparte |
 
 > Nota: este repo (Alinea-Copilot) **no** contiene `openclaw/` ni Hermes; viven en el VPS. Los docs de Fase 2 se versionan aquí y deben **espejarse** a `Alinea-OpenClaw/fase2/`.
@@ -74,7 +75,7 @@ flowchart TB
   subgraph Core[AlineaCopilot-Core · Rust]
     AUTH[Auth + token firmado<br/>user_id+rol+project_id]
     RBAC[RBAC 3 ejes + ACL]
-    RAG[(RAG compuesto<br/>KB3 + KB viva + project_docs)]
+    RAG[RAG = gbrain MCP<br/>KB3 + KB viva + project_docs]
     ROUTER[Model Router + cache + z.ai agents]
     LEDGER[(usage_ledger + límites pre-flight)]
     GW[Gateway agentes remotos]
@@ -85,6 +86,7 @@ flowchart TB
     OC[OpenClaw<br/>agentes de trabajo]
     HER[Hermes<br/>chat + supervisor]
     ZERO[Zero · correo]
+    GBRAIN[gbrain · KB/RAG MCP<br/>markdown + Postgres]
     HULY[Huly · OPCIONAL/descartado]
   end
 
@@ -95,13 +97,13 @@ flowchart TB
   GW -->|wss + identidad por request| HER
   CHAT -->|chat normal| ROUTER
   CHAT -->|chat agentes| GW
-  OC -->|kb_search con identidad| RAG
-  HER -->|kb_search con identidad| RAG
+  RAG -.implementado por.-> GBRAIN
+  OC -->|MCP + identidad| GBRAIN
+  HER -->|MCP + identidad| GBRAIN
   ROUTER -->|retrieve| RAG
   OC --> ZERO
   HER -.telemetría anonimizada.-> OC
-  KBUI -->|docs editados| RAG
-  HULY -.opcional sync ACL.-> RAG
+  KBUI -->|edita .md| GBRAIN
 ```
 
 **Invariante de oro:** la identidad (`user_id`+rol+proyecto) viaja en **cada** request y **filtra todo** (RAG, archivos, mail, memoria, skills). El agente nunca "asume" el usuario: lo **recibe firmado** del Core.
@@ -171,15 +173,15 @@ Como **supervisor**, Hermes ve **telemetría anonimizada/agregada** (errores, ra
 | **memoria/insights** (opcional) | Insights de contactos (mail), notas. | Mutable, scoped a usuario. |
 
 ### 6.2 Un índice, tres consumidores
-- **Índice único** en el Core: `sqlite-vec` (embeddings) + metadatos (`etiqueta`, `owner`, `project_id`, `source`, `version`).
+- **Índice único** implementado con **gbrain** (ver §6.5): brain markdown sincronizado a **Postgres/pgvector** (o PGLite), con metadatos por página (`etiqueta`, `owner`, `project_id`, `source`, `version`) y **hybrid search** (vector + BM25 + reranker).
 - **Consumidores:**
-  - **Copilot** (in-Core) → llama al RAG **directo**.
-  - **OpenClaw** y **Hermes** (remotos) → llaman a un **`kb_search` (MCP/endpoint)** del Core, **llevando la identidad firmada**.
+  - **Copilot** (in-Core) → consulta gbrain (su MCP/HTTP) con la identidad del request.
+  - **OpenClaw** y **Hermes** (remotos) → consultan el **MCP de gbrain**, **llevando la identidad firmada**.
 - **ACL por request:** toda búsqueda filtra por los **3 ejes** (§5.2) según el `{user_id, rol, project_id}` del solicitante. Lo que no pasa el filtro **no se recupera** (y no se cuenta como existente).
 
 ```mermaid
 flowchart LR
-  KB3[(KB3 normas)] --> IDX[(Índice único Core<br/>sqlite-vec + ACL meta)]
+  KB3[(KB3 normas)] --> IDX[(gbrain · brain markdown<br/>Postgres/pgvector + ACL)]
   VIVA[(KB viva)] --> IDX
   PDOCS[(project_docs)] --> IDX
   IDX -->|filtrado por 3 ejes| Q{kb_search · identidad}
@@ -195,6 +197,31 @@ flowchart LR
 
 ### 6.4 Citas y trazabilidad
 Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no tiene acceso, la fuente **no aparece** (ni siquiera como "existe pero no puedes verla", salvo que se decida lo contrario).
+
+### 6.5 Implementación del RAG: **gbrain** (markdown + Postgres + MCP)
+
+**Decisión (17-jun):** el KB/RAG se implementa con **gbrain** (`github.com/garrytan/gbrain`, **MIT**) en vez de un índice a medida. **Por qué encaja perfecto:** está hecho **por Garry Tan justamente como capa de conocimiento/memoria para OpenClaw y Hermes**; es **markdown-first** (un git repo de `.md` es el sistema de registro), se sincroniza a **Postgres/pgvector** (o **PGLite** local) y expone **un servidor MCP** (30+ tools; hybrid search vector+BM25+reranker, modos `conservative/balanced/tokenmax`). "Para que cualquiera acceda" → `gbrain serve --http` (MCP HTTP con **OAuth 2.1**, scopes `read/write/admin`, dashboard `/admin`) + Postgres compartido; soporta **team mounts** y **public subsets**.
+
+**Cómo encaja en el RAG compuesto (§6):**
+- gbrain **es** el índice único: las fuentes (KB3, notas/KB viva, project_docs) viven como **sources markdown** dentro de los **brain(s)** de gbrain.
+- Los **3 motores consultan gbrain por MCP**: OpenClaw/Hermes vía el MCP HTTP; Copilot vía el Core (que llama el MCP/HTTP de gbrain). **Reemplaza** el `sqlite-vec` a medida.
+- **ACL/segregación (§5.2):** mapear los **3 ejes** a la **topología de gbrain** — brain/source **compartido** para KB3 (público/equipo), brains o sources **privados** para confidencial (por rol/usuario), y **scopes/OAuth** del MCP por usuario. ⚠️ gbrain comparte a granularidad **brain/source/scope**; el ACL fino por documento/rol se modela eligiendo bien brains/sources (público vs `confidencial-<área>`).
+
+### 6.6 🔧 Instrucción para Claude (instalar/configurar gbrain) + parte frontend
+
+**Backend / VPS (Claude):**
+1. Instalar gbrain por su **ruta oficial** (está diseñado para ser "instalado/operado por un agente"; ver `docs/INSTALL.md`). Compartido → **Postgres + pgvector** (self-host o Supabase); single → `gbrain init --pglite`. ⚠️ **NO** usar el paquete npm squatteado `npm i -g gbrain`.
+2. **Embeddings:** configurar API key (OpenAI/ZeroEntropy por defecto) — costo ~$0.10/M tokens de ingestión → al ledger `system:kb-index`.
+3. **Importar** KB3 + notas (`gbrain import ...`): KB3 como **source público/equipo**; confidenciales como **sources/brains separados** por rol.
+4. **Exponer MCP:** `gbrain serve --http` en el VPS (OAuth 2.1 + scopes + `/admin`).
+5. **Conectar OpenClaw y Hermes** a ese MCP (`gbrain connect https://host/mcp --token ...` o config MCP `{"command":"gbrain","args":["serve"]}`), llevando la **identidad/scope por usuario** (§5).
+6. **Copilot:** el Core consulta el MCP/HTTP de gbrain con la identidad del request.
+7. Definir la **topología de sharing + ACL** (brains/sources/mounts/public-subset/scopes) según roles (§5.2).
+
+**Frontend (Cursor / yo):**
+- Módulo `/knowledge` = **navegador tipo Obsidian** del brain: **árbol de carpetas/páginas** (los `.md`), **visor/editor markdown** (BlockNote o editor md), **búsqueda** (vía gbrain search/query), **backlinks/grafo** (opcional). Habla con gbrain (HTTP) y/o con los `.md` vía el Core, **respetando ACL**.
+
+**Aceptación:** un agente (OpenClaw/Hermes/Copilot) responde **citando** una página del brain (gbrain); un rol sin acceso **no** la recupera; en `/knowledge` el usuario navega el **árbol** y abre/edita una página `.md` que queda **indexada (sync)** sin re-hornear.
 
 ---
 
@@ -293,10 +320,10 @@ Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no t
 
 **Decisión (16-jun):** la capa humana se construye **nativa y liviana dentro de Alinea**, no con Huly. Esto elimina el servicio pesado (~16 GB), el problema de SSO/OIDC y la duda de licencia. Tres piezas:
 
-### 11.1 Conocimiento (docs/notas) → **BlockNote**
-- Repo: `github.com/TypeCellOS/BlockNote`. **Editor Notion-like** para React, batteries-included (slash menu, drag de bloques, toolbar), trae su **propia UI** (convive con Arco). Exporta **Markdown/HTML/JSON**.
-- **Licencia MPL-2.0** (core) → comercial OK. ⚠️ **No** usar los paquetes **"XL" (GPL)**.
-- Vive como módulo `/knowledge`. Los docs se **indexan en el RAG del Core** (con ACL) → los agentes los ven (§6).
+### 11.1 Conocimiento → **navegador tipo Obsidian sobre gbrain**
+- **Backend del KB = gbrain** (§6.5): brain markdown (git de `.md`) + Postgres + MCP. Es la fuente y el RAG.
+- **Frontend `/knowledge` (yo):** UI **tipo Obsidian** — **árbol** de carpetas/páginas, **visor/editor markdown** (editor de bloques **BlockNote**, `github.com/TypeCellOS/BlockNote`, **MPL-2.0**; ⚠️ sin paquetes "XL"/GPL), **búsqueda** (gbrain search) y backlinks/grafo (opcional).
+- Editar una página en `/knowledge` escribe el `.md` del brain → gbrain **sincroniza** al índice (con ACL) → los agentes lo ven (§6).
 
 ### 11.2 Tareas (board) → **dnd-kit**
 - Repo: `github.com/clauderic/dnd-kit`. **MIT.** Estándar moderno de drag-and-drop en React.
@@ -306,8 +333,8 @@ Toda respuesta basada en RAG incluye **fuente** (doc + sección). Si un rol no t
 - Campana global sobre el **WS del Core** (`ipcBridge`): "borrador listo", "fix de Hermes pendiente", "presupuesto excedido". Sin dependencia externa.
 
 ### 11.4 KB viva ↔ RAG (clave para los agentes)
-- Lo que se edita en `/knowledge` (BlockNote) se **indexa en el RAG del Core** respetando ACL. La **KB3 normas** vive solo en el Core.
-- **Embeddings:** elegir modelo (local vs API), **español**, costo al ledger `system:kb-index`.
+- Lo que se edita en `/knowledge` (los `.md` del brain) lo **sincroniza gbrain** a su índice (Postgres/pgvector) respetando ACL (§6.5). La **KB3** se importa como source (pública/equipo).
+- **Embeddings:** default de gbrain (OpenAI/ZeroEntropy), **español**, costo al ledger `system:kb-index`.
 
 ### 11.5 Huly = opcional (no por defecto)
 - Si en el futuro se necesita **PM avanzado** (boards complejos, sprints, time-tracking, chat de equipo), se puede sumar Huly como **servicio aparte** y mapear **Proyecto 1:1** + sync de docs al RAG. Requiere hierro (~16 GB) y resolver SSO (OIDC Provider en el Core, o IdP dedicado tipo Keycloak/Zitadel, o provisioning sin SSO). **No es necesario para Fase 2.**
@@ -372,9 +399,9 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 
 ## 14. Hierro / infra
 
-**Al descartar Huly, el hierro de Fase 2 baja mucho.** La capa humana (BlockNote + dnd-kit) corre **dentro de Alinea** (sin DBs extra). Lo que pesa en el VPS: **OpenClaw + Hermes + Zero (Postgres)** + el índice RAG/embeddings del Core.
-- **Recomendación:** el VPS actual (4 vCPU / 7.6 GB) puede ir justo con OpenClaw+Hermes+Zero; conviene **subir a ~8 vCPU / 16 GB** para holgura (embeddings + Zero). **Ya no se necesitan los ~16 GB extra de Huly** (a menos que lo sumes opcionalmente, §11.5).
-- Incluir **backups/DR** de SQLite (Core) + Postgres (Zero) + índice RAG, y **rotación de la master key** (envelope encryption).
+**Al descartar Huly, el hierro de Fase 2 baja mucho.** La capa humana (Obsidian-UI + dnd-kit) corre **dentro de Alinea**. Lo que pesa en el VPS: **OpenClaw + Hermes + Zero (Postgres)** + **gbrain (Postgres/pgvector)** para el KB/RAG compartido.
+- **Recomendación:** subir a **~8 vCPU / 16 GB** para holgura (Zero + gbrain Postgres + embeddings). Para single-máquina, gbrain puede ir con **PGLite** (sin servidor); para "que cualquiera acceda" usa **Postgres** (puede compartir instancia con Zero o una dedicada). **Ya no se necesitan los ~16 GB extra de Huly** (§11.5).
+- Incluir **backups/DR** de SQLite (Core) + Postgres (Zero) + **Postgres de gbrain** (el brain markdown está en git, pero el índice vive en Postgres), y **rotación de la master key**.
 
 ---
 
@@ -401,7 +428,7 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 5. 🔐 **Identidad por request** + **revocación/refresh** + **propagar en el gateway**.
 6. **RBAC de 3 ejes** (rol/etiqueta + ownership/membership + project-scope) + `acl_policy`/`resource_acl`.
 7. **Suite de tests de segregación en CI** (matriz user×rol×recurso×acción) — junto con #6.
-8. **RAG compuesto** (índice único sqlite-vec + `kb_search` con ACL para los 3 motores).
+8. **RAG compuesto con gbrain** (instalar + Postgres/pgvector + importar KB3/notas + `gbrain serve --http` MCP; conectar OpenClaw/Hermes/Copilot con ACL por identidad — §6.5/§6.6).
 9. **Router de modelos** + **prompt caching** + **z.ai Agents** + plantillas.
 10. **Guardrail de salida** (§5.4).
 11. **Command Center** (base).
@@ -412,7 +439,7 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 
 **Fase D — Proyectos / Knowledge / Docs**
 14. **Proyectos** (entidad + RAG por proyecto + membership) + **unificar picker WebUI** + **WorkDrive** (anti-conflicto TrueSync).
-15. **Conocimiento (BlockNote)** + **Tareas (board dnd-kit)** + **KB viva ↔ RAG** (índice del Core). *(Huly opcional, no por defecto — §11.5.)*
+15. **Conocimiento (UI Obsidian sobre gbrain)** + **Tareas (board dnd-kit)**. *(gbrain ya instalado en #8; Huly opcional — §11.5.)*
 16. **Visor DXF** (parser + renderer + medición).
 
 **Fase E — Gobernanza**
@@ -450,6 +477,7 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 | **Zero (mail-0/zero)** | Que sea **MIT** (como asume el blueprint). | Si MIT → comercial OK. **Verificar** la versión que despliegues. |
 | **OpenClaw / Hermes** | Licencia de `Alinea-OpenClaw` y de cualquier base de la que deriven. | Si es código propio → OK. **Verificar** dependencias internas. |
 | **Modelos (z.ai/GLM, MiniMax, Claude, Qwen)** | **ToS comercial** de cada proveedor (vía API). | El uso comercial de salidas suele estar permitido; cumplir políticas de uso, no reventa de API cruda, datos. Qwen self-host tiene su propia licencia. |
+| **gbrain** (KB/RAG) | Es **MIT** → comercial OK. | Self-host (PGLite/Postgres). Costo real = **embeddings API** (~$0.10/M tokens ingest). ⚠️ Instalar por la vía oficial; **evitar** el paquete npm squatteado `gbrain`. |
 
 ### 17.3 Principio para no equivocarse
 - **Permisivas (MIT/Apache/BSD/OFL):** comercializa libre, conserva atribución.

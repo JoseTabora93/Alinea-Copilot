@@ -130,20 +130,25 @@
 
 ---
 
-## 9. Conocimiento (BlockNote) + Tareas (dnd-kit) + KB viva ↔ RAG (frontend + Core)
+## 9. Conocimiento (gbrain + UI Obsidian) + Tareas (dnd-kit)
 
-> Capa humana **nativa dentro de Alinea** (Huly descartado por defecto; opcional más adelante).
+> KB/RAG = **gbrain** (MIT, markdown + Postgres + MCP, hecho para OpenClaw/Hermes). Capa humana nativa en Alinea. Huly descartado por defecto.
 
-**Construir (frontend):**
-1. **Conocimiento** `/knowledge`: integrar **BlockNote** (`@blocknote/react`, MPL-2.0; **no** paquetes XL/GPL) como editor de docs/notas; persistir el contenido (JSON/Markdown) en el Core.
-2. **Tareas** `/tasks`: **board Kanban** con **dnd-kit** (`@dnd-kit/core` + `@dnd-kit/sortable`, MIT) + componentes Arco; persistir en el Core; incluir los **todos del agente**.
-3. i18n + gating por rol en ambos.
+**Construir KB con gbrain — Backend/VPS (Claude):**
+1. Instalar gbrain por su **vía oficial** (`docs/INSTALL.md`); compartido → **Postgres + pgvector**, single → `gbrain init --pglite`. ⚠️ evitar el npm squatteado `gbrain`.
+2. Configurar **embeddings** (OpenAI/ZeroEntropy); costo → ledger `system:kb-index`.
+3. `gbrain import` de **KB3** (source público/equipo) + notas; confidenciales como **sources/brains separados** por rol.
+4. `gbrain serve --http` (MCP HTTP, OAuth 2.1, scopes `read/write/admin`, `/admin`).
+5. **Conectar OpenClaw, Hermes y Copilot(Core)** al MCP de gbrain con **identidad/scope por usuario** (§1/§2).
+6. Topología de sharing + ACL (brains/sources/mounts/public-subset/scopes) por rol.
 
-**Construir (Core):**
-4. **KB viva → RAG:** lo editado en `/knowledge` se **indexa** en el índice del Core (sqlite-vec) respetando ACL. KB3 normas quedan solo en el Core. Embeddings (modelo español; costo al ledger `system:kb-index`).
-5. Endpoints `/api/knowledge/*` y `/api/tasks/*` (CRUD scoped por identidad).
+**Construir Conocimiento — Frontend (Cursor / yo):**
+7. `/knowledge` = **navegador tipo Obsidian** del brain: **árbol** de carpetas/páginas (`.md`), **visor/editor markdown** (BlockNote `@blocknote/react`, MPL-2.0; sin XL/GPL), **búsqueda** (gbrain search), backlinks/grafo opcional. Editar escribe el `.md` → gbrain sincroniza. i18n + ACL.
 
-**Probar:** crear un doc en `/knowledge` con BlockNote → un agente lo **cita** (RAG) **sin re-hornear**; un rol sin permiso **no** lo recupera. Crear/mover tarjetas en el board `/tasks` (drag entre columnas) persiste; un agente puede crear/leer tareas vía API; un usuario sin acceso al proyecto **no** ve esas tareas.
+**Construir Tareas — Frontend (Cursor / yo):**
+8. `/tasks`: **board Kanban** con **dnd-kit** (`@dnd-kit/core` + `@dnd-kit/sortable`, MIT) + Arco; persistir en el Core; incluir los **todos del agente**. i18n + gating por rol.
+
+**Probar:** un agente (OpenClaw/Hermes/Copilot) **cita** una página del brain (gbrain) **sin re-hornear**; un rol sin permiso **no** la recupera. En `/knowledge` se navega el **árbol** y se edita una página `.md` que queda indexada. En `/tasks` se arrastran tarjetas entre columnas y persiste; un usuario sin acceso al proyecto **no** ve esas tareas.
 
 ---
 
