@@ -5,6 +5,7 @@
  */
 
 import MarkdownView from '@renderer/components/Markdown';
+import alineaMark from '@renderer/assets/logos/brand/alinea-mark.svg';
 import { Input } from '@arco-design/web-react';
 import { Down, Right, Search } from '@icon-park/react';
 import React, { useMemo, useState } from 'react';
@@ -71,8 +72,8 @@ const BrainTree: React.FC<TreeProps> = ({ nodes, depth, selectedId, expanded, on
             key={node.id}
             type='button'
             data-testid={`kb-page-${node.id}`}
-            className={`w-full flex items-center gap-6px py-6px pr-8px rd-6px border-0 cursor-pointer transition-colors text-13px ${isSelected ? 'bg-fill-3 text-t-primary font-500' : 'bg-transparent text-t-secondary hover:bg-fill-2'}`}
-            style={{ paddingLeft: indent + 19 }}
+            className={`w-full flex items-center gap-6px py-6px pr-8px rd-6px border-0 cursor-pointer transition-colors text-13px ${isSelected ? 'bg-brand-light text-t-primary font-500' : 'bg-transparent text-t-secondary hover:bg-fill-2'}`}
+            style={{ paddingLeft: indent + 19, borderLeft: `2px solid ${isSelected ? 'var(--brand)' : 'transparent'}` }}
             onClick={() => onSelect(node)}
           >
             <span className='truncate'>{node.name}</span>
@@ -112,7 +113,10 @@ const KnowledgePage: React.FC = () => {
       {/* Left: tree */}
       <aside className='flex flex-col w-280px min-w-220px max-w-320px h-full border-r border-solid border-border-2 bg-fill-1'>
         <div className='px-14px pt-16px pb-8px'>
-          <div className='text-15px font-600 text-t-primary'>{t('common.knowledge.title')}</div>
+          <div className='flex items-center gap-8px'>
+            <img src={alineaMark} alt='' className='size-18px shrink-0' />
+            <div className='text-15px font-600 text-t-primary'>{t('common.knowledge.title')}</div>
+          </div>
           <div className='text-12px text-t-tertiary mt-2px'>{t('common.knowledge.subtitle')}</div>
         </div>
         <div className='px-12px pb-8px'>
