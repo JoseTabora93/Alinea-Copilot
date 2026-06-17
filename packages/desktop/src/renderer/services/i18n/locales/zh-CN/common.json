@@ -1,4 +1,14 @@
 {
+  "knowledge": {
+    "navLabel": "知识库",
+    "title": "知识库",
+    "subtitle": "你的团队大脑 —— 浏览智能体使用的知识。",
+    "searchPlaceholder": "搜索页面…",
+    "empty": "选择一个页面阅读",
+    "emptyHint": "从左侧的目录中选择一个页面。",
+    "noResults": "没有匹配的页面。",
+    "prototypeNotice": "示例内容预览 —— 将连接到实时大脑 (gbrain)。"
+  },
   "send": "发送",
   "cancel": "取消",
   "save": "保存",
