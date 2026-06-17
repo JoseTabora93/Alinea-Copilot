@@ -262,6 +262,19 @@ export default defineConfig(({ mode }) => {
         UnoCSS(unoConfig),
         iconParkPlugin(),
         swVersionStampPlugin(SW_BUILD_VERSION),
+        // Copy mlightcad CAD viewer web workers to assets/ so the DXF/DWG viewer
+        // (@mlightcad/cad-simple-viewer) finds them at its default `./assets/*-worker.js`.
+        viteStaticCopy({
+          structured: false,
+          targets: [
+            { src: resolve('node_modules/@mlightcad/data-model/dist/dxf-parser-worker.js'), dest: 'assets' },
+            {
+              src: resolve('node_modules/@mlightcad/cad-simple-viewer/dist/libredwg-parser-worker.js'),
+              dest: 'assets',
+            },
+            { src: resolve('node_modules/@mlightcad/cad-simple-viewer/dist/mtext-renderer-worker.js'), dest: 'assets' },
+          ],
+        }),
         ...(enableSentrySourceMaps ? [sentryVitePlugin(sentryPluginOptions)] : []),
       ],
       build: {
