@@ -395,6 +395,29 @@ Todo esto se construye **dentro** de la app Alinea Copiloto existente: reusa el 
 
 > Resumen: **Command Center, Usuarios, Proveedores, Tareas, Home y DXF son extensiones** de lo que ya existe; **Proyectos, Conocimiento, Correo, Consumos y Notificaciones son rutas/entradas nuevas** en el **mismo** sidebar/router. Cero apps paralelas. La diferencia de fondo es invisible al usuario: el Core gana identidad/RBAC/RAG/ledger por debajo.
 
+### 13.2 Command Center — capacidades (hoy vs. meta)
+
+El "control room" de agentes (el que robará el show con clientes). Vive en Settings → Agents (`/settings/agent`), pestaña **Remote Agents**.
+
+**Hoy (base, PR #15 — `RemoteAgentManagement` montado):**
+- **Conectar gateway remoto** (OpenClaw/Hermes): nombre, avatar, URL `wss://`, auth (none/bearer+token), allow-insecure.
+- **Test de conexión** antes de guardar.
+- **Handshake/pairing OpenClaw** (Ed25519) con "pending approval" + polling (timeout 5 min).
+- **Lista** con estado (connected/pending/error) + protocolo + URL; **editar** / **eliminar**.
+- (Para que un gateway **responda**, debe estar corriendo en el VPS — Opción A, §8.4.)
+
+**Meta (capas que lo vuelven "show-stealer"), cada una con su dependencia:**
+
+| Capacidad | Qué hace | Depende de |
+|---|---|---|
+| Salud en vivo | Estado/latencia/tasa de error/tareas activas (WS) | métricas en gateway/Core |
+| Aprobación de devices | Aprobar/rechazar emparejamientos desde el panel | identidad/gateway |
+| Uso por agente ($) | Tokens y costo por OpenClaw/Hermes/Copilot | ledger (§12) |
+| Cola de fixes de Hermes | Aprobar/rechazar mejoras de skills (+rollback) | Hermes supervisor (§8.3) |
+| Logs / errores | Trazas por agente para depurar | observabilidad (`trace_id`) |
+| Acciones de control | Reiniciar gateway, recargar skills, revocar device | endpoints en el Core |
+| Solo-admin (gating) | Visible/usable solo para admin | roles/identidad (§5) |
+
 ---
 
 ## 14. Hierro / infra
