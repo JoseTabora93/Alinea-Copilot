@@ -175,6 +175,7 @@ export type I18nKey =
   | 'common.backendStartup.packageArchitectureMismatch.description'
   | 'common.backendStartup.packageArchitectureMismatch.title'
   | 'common.browse'
+  | 'common.cad.navLabel'
   | 'common.cancel'
   | 'common.clear'
   | 'common.close'

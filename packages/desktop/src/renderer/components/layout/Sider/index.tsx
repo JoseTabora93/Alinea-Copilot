@@ -9,7 +9,7 @@ import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import { useAllCronJobs } from '@renderer/pages/cron/useCronJobs';
 import { useTeamCreatedRedirect } from '@renderer/pages/team/hooks/useTeamCreatedRedirect';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
+import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderCadEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
 import CronJobSiderSection from './CronJobSiderSection';
 import TeamSiderSection from './TeamSiderSection';
@@ -83,6 +83,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     blurActiveElement();
     closePreview();
     setIsBatchMode(false);
+  };
+
+  const handleCadClick = () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    closePreview();
+    setIsBatchMode(false);
+    Promise.resolve(navigate('/cad')).catch((error) => {
+      console.error('Navigation failed:', error);
+    });
   };
 
   const handleScheduledClick = () => {
@@ -177,6 +187,14 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               siderTooltipProps={siderTooltipProps}
               onConversationSelect={handleConversationSelect}
               onSessionClick={onSessionClick}
+            />
+            {/* CAD viewer nav entry */}
+            <SiderCadEntry
+              isMobile={isMobile}
+              isActive={pathname === '/cad'}
+              collapsed={collapsed}
+              siderTooltipProps={siderTooltipProps}
+              onClick={handleCadClick}
             />
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <SiderScheduledEntry
