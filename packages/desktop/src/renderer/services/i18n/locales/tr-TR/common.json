@@ -1,4 +1,7 @@
 {
+  "cad": {
+    "navLabel": "CAD Viewer"
+  },
   "send": "Gönder",
   "cancel": "İptal",
   "save": "Kaydet",

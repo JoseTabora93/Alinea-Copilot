@@ -1,4 +1,7 @@
 {
+  "cad": {
+    "navLabel": "CAD Viewer"
+  },
   "send": "送信",
   "cancel": "キャンセル",
   "save": "保存",

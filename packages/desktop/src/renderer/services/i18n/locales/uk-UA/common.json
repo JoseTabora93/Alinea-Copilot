@@ -1,4 +1,7 @@
 {
+  "cad": {
+    "navLabel": "CAD Viewer"
+  },
   "send": "Надіслати",
   "cancel": "Скасувати",
   "save": "Зберегти",

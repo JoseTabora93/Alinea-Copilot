@@ -1,4 +1,7 @@
 {
+  "cad": {
+    "navLabel": "CAD 视图"
+  },
   "send": "发送",
   "cancel": "取消",
   "save": "保存",
