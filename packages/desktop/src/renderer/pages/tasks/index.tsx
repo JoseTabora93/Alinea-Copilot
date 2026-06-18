@@ -10,7 +10,9 @@ import { Plus } from '@icon-park/react';
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
   closestCorners,
   useDroppable,
   useSensor,
@@ -154,7 +156,13 @@ const TasksPage: React.FC = () => {
   const { t } = useTranslation();
   const [board, setBoard] = useState<Board>(INITIAL_BOARD);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  // Mouse + Touch sensors (instead of PointerSensor) for broad browser
+  // compatibility; small activation distance so a click still selects/edits.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(KeyboardSensor)
+  );
 
   const columnTitles: Record<ColumnId, string> = useMemo(
     () => ({ todo: t('common.tasks.colTodo'), doing: t('common.tasks.colDoing'), done: t('common.tasks.colDone') }),
