@@ -52,6 +52,10 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [currentPath, setCurrentPath] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  // HTTP status of the last failed browse, so we can react to per-user
+  // sandboxing (403 = outside the user's subtree, 404 = gone) introduced by
+  // the multi-user file segregation (Fase 2 #5).
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [newFolderMode, setNewFolderMode] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
@@ -60,6 +64,7 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
     async (dirPath = '') => {
       setLoading(true);
       setError(null);
+      setErrorStatus(null);
       try {
         const showFiles = isFileMode ? 'true' : 'false';
         const response = await fetch(
@@ -71,7 +76,17 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
         );
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          setError(errorData.error || `HTTP ${response.status}`);
+          setErrorStatus(response.status);
+          // In multi-user mode the Core sandboxes each user to their own subtree:
+          // 403 = path outside the user's root, 404 = path gone. Show a friendly
+          // message + a "go to my folder" escape hatch instead of a raw error.
+          if (response.status === 403) {
+            setError(t('fileSelection.accessDenied', { defaultValue: "You don't have access to this folder." }));
+          } else if (response.status === 404) {
+            setError(t('fileSelection.folderNotFound', { defaultValue: 'This folder no longer exists.' }));
+          } else {
+            setError(errorData.error || `HTTP ${response.status}`);
+          }
           return;
         }
         const envelope = await response.json();
@@ -104,7 +119,7 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
         setLoading(false);
       }
     },
-    [isFileMode]
+    [isFileMode, t]
   );
 
   useEffect(() => {
@@ -270,9 +285,22 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
             {error && (
               <div className='p-16px text-center text-danger text-13px'>
                 <div>{error}</div>
-                <Button size='mini' className='mt-8px' onClick={() => loadDirectory(currentPath).catch(() => {})}>
-                  {t('common.retry', { defaultValue: 'Retry' })}
-                </Button>
+                {errorStatus === 403 || errorStatus === 404 ? (
+                  <Button
+                    size='mini'
+                    className='mt-8px'
+                    onClick={() => {
+                      setSelectedPath('');
+                      loadDirectory('').catch(() => {});
+                    }}
+                  >
+                    {t('fileSelection.goToMyFolder', { defaultValue: 'Go to my folder' })}
+                  </Button>
+                ) : (
+                  <Button size='mini' className='mt-8px' onClick={() => loadDirectory(currentPath).catch(() => {})}>
+                    {t('common.retry', { defaultValue: 'Retry' })}
+                  </Button>
+                )}
               </div>
             )}
             {directoryData.items.map((item, index) => (

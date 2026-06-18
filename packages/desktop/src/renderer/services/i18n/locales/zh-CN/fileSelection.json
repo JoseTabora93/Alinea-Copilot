@@ -4,5 +4,8 @@
   "pleaseSelectFile": "请选择一个文件",
   "pleaseSelectDirectory": "请选择一个目录",
   "newFolder": "新建文件夹",
-  "newFolderPlaceholder": "新文件夹名称"
+  "newFolderPlaceholder": "新文件夹名称",
+  "accessDenied": "你没有权限访问该文件夹。",
+  "folderNotFound": "该文件夹不存在。",
+  "goToMyFolder": "前往我的文件夹"
 }

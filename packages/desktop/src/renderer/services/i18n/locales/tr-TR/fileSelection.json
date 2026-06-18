@@ -2,5 +2,10 @@
   "selectFile": "Dosya Seç",
   "selectDirectory": "Klasör Seç",
   "pleaseSelectFile": "Lütfen bir dosya seçin",
-  "pleaseSelectDirectory": "Lütfen bir klasör seçin"
+  "pleaseSelectDirectory": "Lütfen bir klasör seçin",
+  "accessDenied": "You don't have access to this folder.",
+  "folderNotFound": "This folder no longer exists.",
+  "goToMyFolder": "Go to my folder",
+  "newFolder": "New folder",
+  "newFolderPlaceholder": "New folder name"
 }

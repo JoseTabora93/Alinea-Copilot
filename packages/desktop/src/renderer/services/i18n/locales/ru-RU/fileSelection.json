@@ -2,5 +2,10 @@
   "selectFile": "Выбрать файл",
   "selectDirectory": "Выбрать директорию",
   "pleaseSelectFile": "Пожалуйста, выберите файл",
-  "pleaseSelectDirectory": "Пожалуйста, выберите директорию"
+  "pleaseSelectDirectory": "Пожалуйста, выберите директорию",
+  "accessDenied": "You don't have access to this folder.",
+  "folderNotFound": "This folder no longer exists.",
+  "goToMyFolder": "Go to my folder",
+  "newFolder": "New folder",
+  "newFolderPlaceholder": "New folder name"
 }
