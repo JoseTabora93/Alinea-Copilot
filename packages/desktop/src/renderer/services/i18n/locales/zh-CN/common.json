@@ -1,4 +1,17 @@
 {
+  "tasks": {
+    "navLabel": "任务",
+    "title": "任务",
+    "subtitle": "你的团队看板 —— 组织工作与智能体任务。",
+    "colTodo": "待办",
+    "colDoing": "进行中",
+    "colDone": "已完成",
+    "addCard": "添加卡片",
+    "cardPlaceholder": "卡片标题…",
+    "add": "添加",
+    "empty": "暂无卡片",
+    "prototypeNotice": "本地看板(预览)—— 后续将通过后端持久化。"
+  },
   "send": "发送",
   "cancel": "取消",
   "save": "保存",
