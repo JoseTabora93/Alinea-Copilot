@@ -14,7 +14,13 @@
 
 import type { IConfirmation } from '@/common/chat/chatLib';
 import type { AcpSlashCommandApiItem } from '@/common/chat/slash/types';
-import type { IAdminCreateUserRequest, IAdminUpdateUserRequest, IAdminUser } from '@/common/types/admin/userTypes';
+import type {
+  IAdminCreateUserRequest,
+  IAdminRole,
+  IAdminUpdateUserRequest,
+  IAdminUser,
+  UserRole,
+} from '@/common/types/admin/userTypes';
 import { bridge } from '@office-ai/platform';
 import type { OpenDialogOptions } from 'electron';
 import type {
@@ -1262,6 +1268,16 @@ export const admin = {
     (p) => ({ new_password: p.new_password })
   ),
   deleteUser: httpDelete<void, { id: string }>((p) => `/api/admin/users/${encodeURIComponent(p.id)}`),
+  // Multi-role RBAC (Fase 2 #5). Catalogue + assign/remove; mutations return the
+  // user's updated roles[] so the UI refreshes chips without a full re-fetch.
+  listRoles: httpGet<IAdminRole[], void>('/api/admin/roles'),
+  assignRole: httpPost<{ id: string; roles: UserRole[] }, { id: string; role: UserRole }>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}/roles`,
+    (p) => ({ role: p.role })
+  ),
+  removeRole: httpDelete<{ id: string; roles: UserRole[] }, { id: string; role: UserRole }>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}/roles/${encodeURIComponent(p.role)}`
+  ),
 };
 
 // ---------------------------------------------------------------------------

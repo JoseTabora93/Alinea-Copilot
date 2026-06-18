@@ -6,10 +6,17 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ipcBridge } from '@/common';
-import type { IAdminCreateUserRequest, IAdminUpdateUserRequest, IAdminUser } from '@/common/types/admin/userTypes';
+import type {
+  IAdminCreateUserRequest,
+  IAdminRole,
+  IAdminUpdateUserRequest,
+  IAdminUser,
+  UserRole,
+} from '@/common/types/admin/userTypes';
 
 interface UseAdminUsersResult {
   users: IAdminUser[];
+  roleCatalog: IAdminRole[];
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
@@ -17,6 +24,10 @@ interface UseAdminUsersResult {
   updateUser: (id: string, updates: IAdminUpdateUserRequest) => Promise<void>;
   resetPassword: (id: string, newPassword: string) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
+  /** Assign a role to a user (multi-role RBAC). Returns the user's updated roles. */
+  assignRole: (id: string, role: UserRole) => Promise<UserRole[]>;
+  /** Remove a role from a user. Returns the user's updated roles. */
+  removeRole: (id: string, role: UserRole) => Promise<UserRole[]>;
 }
 
 /**
@@ -27,6 +38,7 @@ interface UseAdminUsersResult {
  */
 export function useAdminUsers(): UseAdminUsersResult {
   const [users, setUsers] = useState<IAdminUser[]>([]);
+  const [roleCatalog, setRoleCatalog] = useState<IAdminRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -42,8 +54,15 @@ export function useAdminUsers(): UseAdminUsersResult {
     setLoading(true);
     setError(null);
     try {
-      const list = (await ipcBridge.admin.listUsers.invoke()) ?? [];
-      if (mountedRef.current) setUsers(list);
+      // Fetch users + the role catalogue together; the catalogue drives the chips.
+      const [list, roles] = await Promise.all([
+        ipcBridge.admin.listUsers.invoke(),
+        ipcBridge.admin.listRoles.invoke().catch(() => [] as IAdminRole[]),
+      ]);
+      if (mountedRef.current) {
+        setUsers(list ?? []);
+        setRoleCatalog(roles ?? []);
+      }
     } catch (err) {
       if (mountedRef.current) setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -54,6 +73,32 @@ export function useAdminUsers(): UseAdminUsersResult {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  // Patch a single user's roles in place (avoids a full re-fetch after assign/remove).
+  const applyRoles = useCallback((id: string, roles: UserRole[]) => {
+    if (!mountedRef.current) return;
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, roles } : u)));
+  }, []);
+
+  const assignRole = useCallback(
+    async (id: string, role: UserRole) => {
+      const res = await ipcBridge.admin.assignRole.invoke({ id, role });
+      const roles = (res?.roles ?? []) as UserRole[];
+      applyRoles(id, roles);
+      return roles;
+    },
+    [applyRoles]
+  );
+
+  const removeRole = useCallback(
+    async (id: string, role: UserRole) => {
+      const res = await ipcBridge.admin.removeRole.invoke({ id, role });
+      const roles = (res?.roles ?? []) as UserRole[];
+      applyRoles(id, roles);
+      return roles;
+    },
+    [applyRoles]
+  );
 
   const createUser = useCallback(
     async (req: IAdminCreateUserRequest) => {
@@ -84,5 +129,17 @@ export function useAdminUsers(): UseAdminUsersResult {
     [reload]
   );
 
-  return { users, loading, error, reload, createUser, updateUser, resetPassword, deleteUser };
+  return {
+    users,
+    roleCatalog,
+    loading,
+    error,
+    reload,
+    createUser,
+    updateUser,
+    resetPassword,
+    deleteUser,
+    assignRole,
+    removeRole,
+  };
 }

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Form, Input, Message, Select } from '@arco-design/web-react';
+import React, { useEffect, useState } from 'react';
+import { Button, Form, Input, Message } from '@arco-design/web-react';
 import { Copy, Refresh } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import AionModal from '@/renderer/components/base/AionModal';
 import { copyText } from '@/renderer/utils/ui/clipboard';
-import type { IAdminCreateUserRequest, UserRole } from '@/common/types/admin/userTypes';
+import type { IAdminCreateUserRequest } from '@/common/types/admin/userTypes';
 import { generateTempPassword } from './passwordUtils';
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$/;
@@ -27,7 +27,6 @@ interface InviteFormValues {
   username: string;
   display_name?: string;
   email?: string;
-  role: UserRole;
 }
 
 /** Modal for inviting (creating) a new user with an auto-generated temp password. */
@@ -42,17 +41,8 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ visible, onCancel, on
     if (visible) {
       setPassword(generateTempPassword());
       form.resetFields();
-      form.setFieldValue('role', 'member');
     }
   }, [visible, form]);
-
-  const roleOptions = useMemo(
-    () => [
-      { label: t('settings.users.roleMember'), value: 'member' as UserRole },
-      { label: t('settings.users.roleAdmin'), value: 'admin' as UserRole },
-    ],
-    [t]
-  );
 
   const handleCopyPassword = async () => {
     try {
@@ -75,7 +65,6 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ visible, onCancel, on
       const req: IAdminCreateUserRequest = {
         username: values.username.trim(),
         password,
-        role: values.role,
       };
       const displayName = values.display_name?.trim();
       const email = values.email?.trim();
@@ -141,9 +130,9 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ visible, onCancel, on
           <Input placeholder={t('settings.users.emailPlaceholder')} autoComplete='off' />
         </Form.Item>
 
-        <Form.Item label={t('settings.users.fieldRole')} field='role' initialValue='member'>
-          <Select options={roleOptions} />
-        </Form.Item>
+        <p className='text-12px text-t-tertiary mt-0 mb-12px'>
+          {t('settings.users.rolesAfterCreateHint', { defaultValue: 'Assign roles after creating the user.' })}
+        </p>
 
         <Form.Item label={t('settings.users.temporaryPassword')}>
           <div className='flex items-center gap-8px'>
