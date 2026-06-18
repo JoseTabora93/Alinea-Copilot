@@ -1,4 +1,17 @@
 {
+  "tasks": {
+    "navLabel": "Tasks",
+    "title": "Tasks",
+    "subtitle": "Your team board — organize work and what the agents do.",
+    "colTodo": "To do",
+    "colDoing": "In progress",
+    "colDone": "Done",
+    "addCard": "Add a card",
+    "cardPlaceholder": "Card title…",
+    "add": "Add",
+    "empty": "No cards",
+    "prototypeNotice": "Local board (preview) — will persist via the backend."
+  },
   "send": "전송",
   "cancel": "취소",
   "save": "저장",
