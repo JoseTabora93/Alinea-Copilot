@@ -7,6 +7,7 @@ import { type IExtensionSettingsTab } from '@/common/adapter/ipcBridge';
 import { useExtensionSettingsTabs } from '@/renderer/hooks/system/useExtensionSettingsTabs';
 import {
   Cat,
+  ChartHistogram,
   Communication,
   Computer,
   Earth,
@@ -67,6 +68,12 @@ export function getBuiltinSettingsNavItems(isDesktop: boolean, t: TranslateFn, i
       label: t('settings.webui'),
       icon: isDesktop ? <Earth theme='outline' size='16' /> : <Communication theme='outline' size='16' />,
       path: 'webui',
+    },
+    usage: {
+      id: 'usage',
+      label: t('settings.usage.navLabel'),
+      icon: <ChartHistogram theme='outline' size='16' />,
+      path: 'usage',
     },
     users: {
       id: 'users',
