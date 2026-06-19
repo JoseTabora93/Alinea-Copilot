@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Button, InputNumber, Message } from '@arco-design/web-react';
+import { Button, InputNumber, Message, Spin } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import AionModal from '@/renderer/components/base/AionModal';
@@ -15,34 +15,44 @@ interface LimitEditorModalProps {
   visible: boolean;
   userId: string;
   username: string;
-  /** Last-known thresholds to prefill (the API has no per-user limit read endpoint). */
-  initialSoft: number | null;
-  initialHard: number | null;
   onClose: () => void;
-  onSaved: (limit: IUsageLimit) => void;
+  /** Optional: notified with the saved limit so callers can refresh dependent views. */
+  onSaved?: (limit: IUsageLimit) => void;
 }
 
 /** Admin modal to set a user's soft/hard USD spend thresholds (`PUT .../limit`). */
-const LimitEditorModal: React.FC<LimitEditorModalProps> = ({
-  visible,
-  userId,
-  username,
-  initialSoft,
-  initialHard,
-  onClose,
-  onSaved,
-}) => {
+const LimitEditorModal: React.FC<LimitEditorModalProps> = ({ visible, userId, username, onClose, onSaved }) => {
   const { t } = useTranslation();
-  const [soft, setSoft] = useState<number | null>(initialSoft);
-  const [hard, setHard] = useState<number | null>(initialHard);
+  const [soft, setSoft] = useState<number | null>(null);
+  const [hard, setHard] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Prefill from the authoritative per-user limit endpoint each time the modal opens.
   useEffect(() => {
-    if (visible) {
-      setSoft(initialSoft);
-      setHard(initialHard);
-    }
-  }, [visible, initialSoft, initialHard]);
+    if (!visible) return;
+    let active = true;
+    setLoading(true);
+    ipcBridge.usage.getLimit
+      .invoke({ id: userId })
+      .then((limit) => {
+        if (!active) return;
+        setSoft(limit?.soft_usd ?? null);
+        setHard(limit?.hard_usd ?? null);
+      })
+      .catch(() => {
+        if (active) {
+          setSoft(null);
+          setHard(null);
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [visible, userId]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -53,7 +63,7 @@ const LimitEditorModal: React.FC<LimitEditorModalProps> = ({
         hard_usd: hard ?? null,
       });
       Message.success(t('settings.usage.limitSaved'));
-      onSaved(limit);
+      onSaved?.(limit);
       onClose();
     } catch (err) {
       Message.error(err instanceof Error ? err.message : t('settings.usage.limitSaveFailed'));
@@ -78,6 +88,7 @@ const LimitEditorModal: React.FC<LimitEditorModalProps> = ({
           <Button
             type='primary'
             loading={saving}
+            disabled={loading}
             onClick={() => void handleSave()}
             className='px-20px min-w-80px'
             style={{ borderRadius: 8 }}
@@ -87,31 +98,37 @@ const LimitEditorModal: React.FC<LimitEditorModalProps> = ({
         </div>
       }
     >
-      <div className='flex flex-col gap-16px'>
-        <p className='text-13px text-t-tertiary m-0'>{t('settings.usage.limitHint')}</p>
-        <div className='flex flex-col gap-6px'>
-          <span className='text-13px text-t-secondary'>{t('settings.usage.softLabel')}</span>
-          <InputNumber
-            value={soft ?? undefined}
-            onChange={(v) => setSoft(typeof v === 'number' ? v : null)}
-            min={0}
-            placeholder={t('settings.usage.thresholdPlaceholder')}
-            prefix='$'
-            style={{ width: '100%' }}
-          />
+      {loading ? (
+        <div className='flex items-center justify-center py-40px'>
+          <Spin />
         </div>
-        <div className='flex flex-col gap-6px'>
-          <span className='text-13px text-t-secondary'>{t('settings.usage.hardLabel')}</span>
-          <InputNumber
-            value={hard ?? undefined}
-            onChange={(v) => setHard(typeof v === 'number' ? v : null)}
-            min={0}
-            placeholder={t('settings.usage.thresholdPlaceholder')}
-            prefix='$'
-            style={{ width: '100%' }}
-          />
+      ) : (
+        <div className='flex flex-col gap-16px'>
+          <p className='text-13px text-t-tertiary m-0'>{t('settings.usage.limitHint')}</p>
+          <div className='flex flex-col gap-6px'>
+            <span className='text-13px text-t-secondary'>{t('settings.usage.softLabel')}</span>
+            <InputNumber
+              value={soft ?? undefined}
+              onChange={(v) => setSoft(typeof v === 'number' ? v : null)}
+              min={0}
+              placeholder={t('settings.usage.thresholdPlaceholder')}
+              prefix='$'
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div className='flex flex-col gap-6px'>
+            <span className='text-13px text-t-secondary'>{t('settings.usage.hardLabel')}</span>
+            <InputNumber
+              value={hard ?? undefined}
+              onChange={(v) => setHard(typeof v === 'number' ? v : null)}
+              min={0}
+              placeholder={t('settings.usage.thresholdPlaceholder')}
+              prefix='$'
+              style={{ width: '100%' }}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </AionModal>
   );
 };

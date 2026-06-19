@@ -34,6 +34,22 @@ const AdminUsageTable: React.FC = () => {
         render: (_c, r) => formatUsd(r.cost_usd),
       },
       {
+        title: t('settings.usage.colLimit'),
+        dataIndex: 'limit',
+        width: 140,
+        align: 'right',
+        render: (_c, r) => {
+          const lim = r.limit;
+          if (!lim || (lim.soft_usd === null && lim.hard_usd === null))
+            return <span className='text-t-tertiary'>—</span>;
+          return (
+            <span className='text-13px text-t-secondary'>
+              {formatUsd(lim.soft_usd)} / {formatUsd(lim.hard_usd)}
+            </span>
+          );
+        },
+      },
+      {
         title: t('settings.usage.tokensIn'),
         dataIndex: 'tokens_in',
         width: 120,

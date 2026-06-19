@@ -10,9 +10,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { Message } from '@arco-design/web-react';
 import type { IUsageMe, IUsageSummary } from '@/common/types/admin/usageTypes';
 
-const { meMock, adminListMock, setLimitMock, listUsersMock } = vi.hoisted(() => ({
+const { meMock, adminListMock, getLimitMock, setLimitMock, listUsersMock } = vi.hoisted(() => ({
   meMock: vi.fn(),
   adminListMock: vi.fn(),
+  getLimitMock: vi.fn(),
   setLimitMock: vi.fn(),
   listUsersMock: vi.fn(),
 }));
@@ -45,6 +46,7 @@ vi.mock('@/common', () => ({
     usage: {
       me: { invoke: meMock },
       adminList: { invoke: adminListMock },
+      getLimit: { invoke: getLimitMock },
       setLimit: { invoke: setLimitMock },
     },
     admin: {
@@ -115,8 +117,26 @@ describe('MyUsageCard', () => {
 describe('AdminUsageTable', () => {
   it('joins usage rows with usernames from the admin users list', async () => {
     const rows: IUsageSummary[] = [
-      { user_id: 'u_1', tokens_in: 10, tokens_out: 5, cache_read: 0, cache_write: 0, cost_usd: 12, events: 2 },
-      { user_id: 'u_2', tokens_in: 1, tokens_out: 1, cache_read: 0, cache_write: 0, cost_usd: 99, events: 1 },
+      {
+        user_id: 'u_1',
+        tokens_in: 10,
+        tokens_out: 5,
+        cache_read: 0,
+        cache_write: 0,
+        cost_usd: 12,
+        events: 2,
+        limit: { soft_usd: 25, hard_usd: 50, period: 'monthly', updated_at: 0 },
+      },
+      {
+        user_id: 'u_2',
+        tokens_in: 1,
+        tokens_out: 1,
+        cache_read: 0,
+        cache_write: 0,
+        cost_usd: 99,
+        events: 1,
+        limit: null,
+      },
     ];
     adminListMock.mockResolvedValue(rows);
     listUsersMock.mockResolvedValue([
@@ -129,36 +149,33 @@ describe('AdminUsageTable', () => {
     expect(screen.getByText('john-doe')).toBeInTheDocument();
     expect(screen.getByText('$12.00')).toBeInTheDocument();
     expect(screen.getByText('$99.00')).toBeInTheDocument();
+    // Flattened limit shown as "soft / hard".
+    expect(screen.getByText('$25.00 / $50.00')).toBeInTheDocument();
   });
 });
 
 describe('LimitEditorModal', () => {
-  it('saves the prefilled thresholds via PUT and reports back the result', async () => {
-    const errorSpy = vi.spyOn(Message, 'success').mockReturnValue('' as never);
-    setLimitMock.mockResolvedValue({ user_id: 'u_1', soft_usd: 10, hard_usd: 50, period: 'monthly', updated_at: 1 });
+  it('prefills from GET .../limit and saves the thresholds via PUT', async () => {
+    const successSpy = vi.spyOn(Message, 'success').mockReturnValue('' as never);
+    getLimitMock.mockResolvedValue({ user_id: 'u_1', soft_usd: 10, hard_usd: 50, period: 'monthly', updated_at: 1 });
+    setLimitMock.mockResolvedValue({ user_id: 'u_1', soft_usd: 10, hard_usd: 50, period: 'monthly', updated_at: 2 });
     const onSaved = vi.fn();
     const onClose = vi.fn();
-    render(
-      <LimitEditorModal
-        visible
-        userId='u_1'
-        username='maria-lopez'
-        initialSoft={10}
-        initialHard={50}
-        onClose={onClose}
-        onSaved={onSaved}
-      />
-    );
+    render(<LimitEditorModal visible userId='u_1' username='maria-lopez' onClose={onClose} onSaved={onSaved} />);
+
+    // Reads the authoritative limit on open, then the inputs render.
+    await waitFor(() => expect(getLimitMock).toHaveBeenCalledWith({ id: 'u_1' }));
+    await waitFor(() => expect(screen.getByText('settings.usage.softLabel')).toBeInTheDocument());
 
     fireEvent.click(screen.getByText('settings.usage.limitSave'));
-
     await waitFor(() => expect(setLimitMock).toHaveBeenCalledWith({ id: 'u_1', soft_usd: 10, hard_usd: 50 }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
-    errorSpy.mockRestore();
+    successSpy.mockRestore();
   });
 
-  it('sends null for an empty threshold', async () => {
+  it('sends null thresholds when the user has no limit', async () => {
     const successSpy = vi.spyOn(Message, 'success').mockReturnValue('' as never);
+    getLimitMock.mockResolvedValue(null);
     setLimitMock.mockResolvedValue({
       user_id: 'u_1',
       soft_usd: null,
@@ -166,18 +183,9 @@ describe('LimitEditorModal', () => {
       period: 'monthly',
       updated_at: 1,
     });
-    render(
-      <LimitEditorModal
-        visible
-        userId='u_1'
-        username='maria-lopez'
-        initialSoft={null}
-        initialHard={null}
-        onClose={vi.fn()}
-        onSaved={vi.fn()}
-      />
-    );
+    render(<LimitEditorModal visible userId='u_1' username='maria-lopez' onClose={vi.fn()} />);
 
+    await waitFor(() => expect(screen.getByText('settings.usage.softLabel')).toBeInTheDocument());
     fireEvent.click(screen.getByText('settings.usage.limitSave'));
     await waitFor(() => expect(setLimitMock).toHaveBeenCalledWith({ id: 'u_1', soft_usd: null, hard_usd: null }));
     successSpy.mockRestore();

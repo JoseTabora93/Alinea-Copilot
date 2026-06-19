@@ -12,6 +12,9 @@
  * (override with `?since_ms=<epoch_ms>`).
  */
 
+/** Spend thresholds embedded in an admin usage row (no `user_id`). */
+export type IUsageLimitInline = Pick<IUsageLimit, 'soft_usd' | 'hard_usd' | 'period' | 'updated_at'>;
+
 /** Aggregated consumption for a single user over the active window. */
 export interface IUsageSummary {
   user_id: string;
@@ -22,6 +25,8 @@ export interface IUsageSummary {
   /** Estimated spend in USD (token counts are exact; cost is an estimate). */
   cost_usd: number;
   events: number;
+  /** Active spend thresholds (flattened into the admin usage row); `null` when unset. */
+  limit?: IUsageLimitInline | null;
 }
 
 /** Per-user spend thresholds. `null` means the threshold is unset. */

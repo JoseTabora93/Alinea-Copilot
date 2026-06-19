@@ -1903,6 +1903,7 @@ export type I18nKey =
   | 'settings.usage.cacheRead'
   | 'settings.usage.cacheWrite'
   | 'settings.usage.colCost'
+  | 'settings.usage.colLimit'
   | 'settings.usage.colUser'
   | 'settings.usage.empty'
   | 'settings.usage.estimateNote'

@@ -146,9 +146,6 @@ const UsersPanel: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<IAdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [limitTarget, setLimitTarget] = useState<IAdminUser | null>(null);
-  // Last-known limits per user (the API has no per-user limit read endpoint;
-  // we cache values returned by PUT so reopening the editor prefills them).
-  const [knownLimits, setKnownLimits] = useState<Record<string, { soft: number | null; hard: number | null }>>({});
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const setPending = (id: string, pending: boolean) => {
@@ -445,12 +442,7 @@ const UsersPanel: React.FC = () => {
           visible={Boolean(limitTarget)}
           userId={limitTarget.id}
           username={limitTarget.username}
-          initialSoft={knownLimits[limitTarget.id]?.soft ?? null}
-          initialHard={knownLimits[limitTarget.id]?.hard ?? null}
           onClose={() => setLimitTarget(null)}
-          onSaved={(limit) =>
-            setKnownLimits((prev) => ({ ...prev, [limit.user_id]: { soft: limit.soft_usd, hard: limit.hard_usd } }))
-          }
         />
       )}
     </div>

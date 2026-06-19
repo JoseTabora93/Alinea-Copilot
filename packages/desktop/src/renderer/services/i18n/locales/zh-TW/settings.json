@@ -1077,6 +1077,7 @@
     "adminSubtitle": "Consumption per user over the current period.",
     "colUser": "User",
     "colCost": "Cost",
+    "colLimit": "Limit (soft / hard)",
     "empty": "No usage yet",
     "setLimit": "Spend limits",
     "limitTitle": "Spend limits — {{username}}",

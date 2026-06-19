@@ -1295,6 +1295,8 @@ export const usage = {
   adminList: httpGet<IUsageSummary[], { since_ms?: number }>((p) =>
     p?.since_ms ? `/api/admin/usage?since_ms=${p.since_ms}` : '/api/admin/usage'
   ),
+  /** Admin-only: read a single user's active limit (null when unset). Prefills the editor. */
+  getLimit: httpGet<IUsageLimit | null, { id: string }>((p) => `/api/admin/users/${encodeURIComponent(p.id)}/limit`),
   /** Admin-only: set a user's spend thresholds (null clears a threshold). */
   setLimit: httpPut<IUsageLimit, { id: string } & IUsageLimitUpdate>(
     (p) => `/api/admin/users/${encodeURIComponent(p.id)}/limit`,
