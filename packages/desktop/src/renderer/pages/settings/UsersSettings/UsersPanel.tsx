@@ -18,6 +18,7 @@ import { useAdminUsers } from './useAdminUsers';
 import { generateTempPassword } from './passwordUtils';
 import InviteUserModal from './InviteUserModal';
 import PasswordResultModal from './PasswordResultModal';
+import LimitEditorModal from '../UsageSettings/LimitEditorModal';
 
 interface RevealState {
   title: string;
@@ -144,6 +145,7 @@ const UsersPanel: React.FC = () => {
   const [resetting, setResetting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<IAdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [limitTarget, setLimitTarget] = useState<IAdminUser | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const setPending = (id: string, pending: boolean) => {
@@ -222,6 +224,9 @@ const UsersPanel: React.FC = () => {
           onClick={() => void handleToggleActive(record)}
         >
           {record.is_active ? t('settings.users.actionDeactivate') : t('settings.users.actionActivate')}
+        </Menu.Item>
+        <Menu.Item key='set-limit' disabled={busy} onClick={() => setLimitTarget(record)}>
+          {t('settings.usage.setLimit')}
         </Menu.Item>
         <Menu.Item key='reset-password' disabled={busy} onClick={() => setResetTarget(record)}>
           {t('settings.users.resetPassword')}
@@ -431,6 +436,15 @@ const UsersPanel: React.FC = () => {
         password={reveal?.password ?? ''}
         onClose={() => setReveal(null)}
       />
+
+      {limitTarget && (
+        <LimitEditorModal
+          visible={Boolean(limitTarget)}
+          userId={limitTarget.id}
+          username={limitTarget.username}
+          onClose={() => setLimitTarget(null)}
+        />
+      )}
     </div>
   );
 };

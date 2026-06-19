@@ -5,6 +5,7 @@ import { useExtI18n } from '@/renderer/hooks/system/useExtI18n';
 import { useExtensionSettingsTabs } from '@/renderer/hooks/system/useExtensionSettingsTabs';
 import {
   Cat,
+  ChartHistogram,
   Communication,
   Computer,
   Earth,
@@ -33,6 +34,7 @@ export const BUILTIN_TAB_IDS = [
   'capabilities',
   'appearance',
   'webui',
+  'usage',
   'users',
   'pet',
   'system',
@@ -113,6 +115,7 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
         icon: isDesktop ? <Earth /> : <Communication />,
         path: 'webui',
       },
+      usage: { id: 'usage', label: t('settings.usage.navLabel'), icon: <ChartHistogram />, path: 'usage' },
       users: { id: 'users', label: t('settings.users.navLabel'), icon: <Peoples />, path: 'users' },
       pet: { id: 'pet', label: t('pet.desktopPet'), icon: <Cat />, path: 'pet' },
       system: { id: 'system', label: t('settings.system'), icon: <System />, path: 'system' },
