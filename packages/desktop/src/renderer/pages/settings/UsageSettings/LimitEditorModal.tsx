@@ -95,8 +95,6 @@ const LimitEditorModal: React.FC<LimitEditorModalProps> = ({
             value={soft ?? undefined}
             onChange={(v) => setSoft(typeof v === 'number' ? v : null)}
             min={0}
-            precision={2}
-            step={1}
             placeholder={t('settings.usage.thresholdPlaceholder')}
             prefix='$'
             style={{ width: '100%' }}
@@ -108,8 +106,6 @@ const LimitEditorModal: React.FC<LimitEditorModalProps> = ({
             value={hard ?? undefined}
             onChange={(v) => setHard(typeof v === 'number' ? v : null)}
             min={0}
-            precision={2}
-            step={1}
             placeholder={t('settings.usage.thresholdPlaceholder')}
             prefix='$'
             style={{ width: '100%' }}
