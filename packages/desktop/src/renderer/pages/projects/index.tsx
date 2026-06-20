@@ -1,6 +1,6 @@
 /**
- * Página de Proyectos — lista (Alinea Fase 2 #2).
- * List-first premium: rail de proyectos a la izquierda, detalle a la derecha.
+ * Página de Proyectos — rail premium list-first (Alinea Fase 2 #2).
+ * Rail denso de proyectos a la izquierda, board del proyecto a la derecha.
  * Cableado a la API del Core vía ipcBridge.projects.
  */
 import { ipcBridge } from '@/common';
@@ -65,40 +65,54 @@ const ProjectsIndex: React.FC = () => {
   }, [projects, query]);
 
   return (
-    <div className='flex h-full w-full'>
-      <aside className='w-300px flex flex-col border-r border-border-2 bg-bg-1'>
-        <div className='flex items-center justify-between px-16px py-14px'>
-          <span className='text-16px font-500 text-t-primary'>{t('projects.title')}</span>
-          <Button type='primary' size='small' icon={<IconPlus />} onClick={() => setCreating(true)}>
-            {t('projects.new')}
-          </Button>
+    <div className='flex h-full w-full bg-bg-base'>
+      <aside className='w-240px flex flex-col flex-none border-r border-border-1 bg-bg-1'>
+        <div className='flex items-center justify-between px-14px pt-14px pb-2px'>
+          <span className='text-13px font-500 text-t-primary'>{t('projects.title')}</span>
+          <button
+            className='size-24px flex items-center justify-center rounded-6px text-t-secondary hover:bg-bg-hover hover:text-t-primary transition-colors duration-100'
+            aria-label={t('projects.new')}
+            onClick={() => setCreating(true)}
+          >
+            <IconPlus />
+          </button>
         </div>
-        <div className='px-16px pb-10px'>
-          <Input allowClear prefix={<IconSearch />} placeholder={t('projects.search')} value={query} onChange={setQuery} />
+        <div className='px-10px py-8px'>
+          <Input allowClear size='small' prefix={<IconSearch />} placeholder={t('projects.search')} value={query} onChange={setQuery} />
         </div>
-        <div className='flex-1 overflow-y-auto px-8px'>
+        <div className='flex-1 overflow-y-auto px-8px pb-8px'>
           {loading ? (
             <div className='flex justify-center py-40px'>
               <Spin />
             </div>
           ) : filtered.length === 0 ? (
-            <Empty icon={<IconFolderAdd className='text-32px' />} description={t('projects.empty')} className='py-40px' />
+            <Empty icon={<IconFolderAdd style={{ fontSize: 28 }} />} description={t('projects.empty')} className='py-40px' />
           ) : (
-            filtered.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => navigate(`/projects/${p.id}`)}
-                className={`w-full text-left rounded-8px px-12px py-10px mb-4px transition-colors b-none cursor-pointer ${
-                  p.id === id ? 'bg-bg-active' : 'bg-transparent hover:bg-bg-hover'
-                }`}
-              >
-                <div className='text-14px text-t-primary truncate'>{p.name}</div>
-                <div className='text-12px text-t-secondary mt-2px'>
-                  {PROJECT_TYPE_LABEL[p.project_type] ?? p.project_type}
-                  {p.status === 'archived' ? ` · ${t('projects.archived')}` : ''}
-                </div>
-              </button>
-            ))
+            filtered.map((p) => {
+              const active = p.id === id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                  className={`group w-full text-left flex items-center gap-9px px-8px h-32px rounded-6px mb-1px transition-colors duration-100 ${
+                    active ? 'bg-fill-3 text-t-primary shadow-[inset_2px_0_0_var(--primary)]' : 'text-t-secondary hover:bg-bg-hover'
+                  }`}
+                >
+                  <span className={`size-7px rotate-45 rounded-1px flex-none ${active ? 'bg-primary' : 'bg-fill-3 group-hover:bg-border-2'}`} />
+                  <span className='flex-1 min-w-0 text-13px truncate'>{p.name}</span>
+                  {p.status === 'archived' && <span className='text-10px text-t-tertiary flex-none'>{t('projects.archived')}</span>}
+                </button>
+              );
+            })
+          )}
+          {!loading && (
+            <button
+              onClick={() => setCreating(true)}
+              className='w-full text-left flex items-center gap-9px px-8px h-32px rounded-6px mt-2px text-t-tertiary hover:bg-bg-hover hover:text-t-secondary transition-colors duration-100'
+            >
+              <IconPlus />
+              <span className='text-13px'>{t('projects.new')}</span>
+            </button>
           )}
         </div>
       </aside>
@@ -107,9 +121,9 @@ const ProjectsIndex: React.FC = () => {
         {id ? (
           <ProjectDetail projectId={id} onChanged={load} />
         ) : (
-          <div className='h-full flex flex-col items-center justify-center text-t-tertiary'>
-            <IconFolderAdd className='text-40px' />
-            <div className='mt-8px text-14px'>{t('projects.pickOne')}</div>
+          <div className='h-full flex flex-col items-center justify-center text-t-tertiary gap-10px'>
+            <IconFolderAdd style={{ fontSize: 36 }} />
+            <div className='text-14px'>{t('projects.pickOne')}</div>
           </div>
         )}
       </main>
@@ -122,14 +136,10 @@ const ProjectsIndex: React.FC = () => {
         okText={t('projects.create')}
         cancelText={t('common.cancel')}
         okButtonProps={{ disabled: !newName.trim() }}
+        autoFocus
+        focusLock
       >
-        <Input
-          autoFocus
-          placeholder={t('projects.namePlaceholder')}
-          value={newName}
-          onChange={setNewName}
-          onPressEnter={create}
-        />
+        <Input autoFocus placeholder={t('projects.namePlaceholder')} value={newName} onChange={setNewName} onPressEnter={create} />
       </Modal>
     </div>
   );
