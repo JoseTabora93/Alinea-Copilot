@@ -12,6 +12,22 @@
   "generatePipeline": "Generar pipeline",
   "pipelineHint": "Genera un pipeline desde una plantilla para poblar el board.",
   "handoffLog": "Registro de handoffs",
+  "copiloto": "Copiloto",
+  "linkWorkdrive": "Vincular carpeta WorkDrive",
+  "workdriveSoon": "El vínculo proyecto ↔ carpeta WorkDrive llega en una próxima iteración del backend.",
+  "tabs": {
+    "list": "Lista",
+    "board": "Board",
+    "docs": "Docs",
+    "files": "Archivos"
+  },
+  "docsTitle": "Documentos del proyecto",
+  "docsSoon": "Próximamente — módulo de documentos (editor de bloques).",
+  "filesTitle": "Archivos · carpeta WorkDrive",
+  "filesSoon": "Próximamente — sincronización con la carpeta de Zoho WorkDrive del proyecto.",
+  "activity": "Actividad",
+  "noActivity": "Sin actividad todavía.",
+  "copilotoSoon": "Chat con los agentes del proyecto — próximamente",
   "errors": {
     "load": "No se pudieron cargar los proyectos",
     "create": "No se pudo crear el proyecto",
