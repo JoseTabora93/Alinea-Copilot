@@ -3,7 +3,7 @@
  * List-first premium: rail de proyectos a la izquierda, detalle a la derecha.
  * Cableado a la API del Core vía ipcBridge.projects.
  */
-import { ipcBridge } from '@/common/ipcBridge';
+import { ipcBridge } from '@/common';
 import type { TProject } from '@/common/types/project';
 import { Button, Empty, Input, Message, Modal, Spin } from '@arco-design/web-react';
 import { IconFolderAdd, IconPlus, IconSearch } from '@arco-design/web-react/icon';

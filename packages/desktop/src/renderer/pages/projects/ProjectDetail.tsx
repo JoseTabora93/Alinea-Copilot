@@ -3,10 +3,10 @@
  * Instancia pipeline, transiciona tareas (la cascada de handoffs ocurre en el
  * Core), muestra artefactos y el registro de handoffs. Arco + UnoCSS.
  */
-import { ipcBridge } from '@/common/ipcBridge';
+import { ipcBridge } from '@/common';
 import type { TPipelineTemplate, TProject, TTask, TTaskAction, TTaskHandoff, TTaskStatus } from '@/common/types/project';
 import { Button, Dropdown, Empty, Menu, Message, Spin, Tag } from '@arco-design/web-react';
-import { IconRobot, IconUser, IconWand } from '@arco-design/web-react/icon';
+import { IconRobot, IconThunderbolt, IconUser } from '@arco-design/web-react/icon';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -41,7 +41,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
 
   const loadTasks = useCallback(async () => {
     const list = await ipcBridge.projects.tasks.invoke({ id: projectId });
-    setTasks((list ?? []).slice().sort((a, b) => a.order_index - b.order_index));
+    setTasks((list ?? []).slice().sort((a: TTask, b: TTask) => a.order_index - b.order_index));
   }, [projectId]);
 
   const load = useCallback(async () => {
@@ -67,7 +67,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
 
   const refreshHandoffs = useCallback(async () => {
     const all = await Promise.all(tasks.map((task) => ipcBridge.projects.taskHandoffs.invoke({ id: task.id })));
-    const flat = all.flat().sort((a, b) => b.created_at - a.created_at);
+    const flat = all.flat().sort((a: TTaskHandoff, b: TTaskHandoff) => b.created_at - a.created_at);
     setHandoffs(flat.slice(0, 8));
   }, [tasks]);
 
@@ -139,7 +139,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
               </Menu>
             }
           >
-            <Button type='primary' icon={<IconWand />} loading={working === 'pipeline'}>
+            <Button type='primary' icon={<IconThunderbolt />} loading={working === 'pipeline'}>
               {t('projects.generatePipeline')}
             </Button>
           </Dropdown>
