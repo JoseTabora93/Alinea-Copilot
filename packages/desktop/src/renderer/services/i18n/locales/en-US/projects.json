@@ -1,0 +1,30 @@
+{
+  "title": "Proyectos",
+  "new": "Nuevo",
+  "create": "Crear",
+  "search": "Buscar proyectos",
+  "empty": "Aún no hay proyectos",
+  "archived": "archivado",
+  "pickOne": "Selecciona un proyecto para ver su board",
+  "namePlaceholder": "Nombre del proyecto",
+  "noPipeline": "Sin pipeline todavía",
+  "taskCount": "{{count}} tareas",
+  "generatePipeline": "Generar pipeline",
+  "pipelineHint": "Genera un pipeline desde una plantilla para poblar el board.",
+  "handoffLog": "Registro de handoffs",
+  "errors": {
+    "load": "No se pudieron cargar los proyectos",
+    "create": "No se pudo crear el proyecto",
+    "pipeline": "No se pudo generar el pipeline",
+    "transition": "Acción no permitida"
+  },
+  "actions": {
+    "start": "Iniciar",
+    "runAgent": "Ejecutar (OpenClaw)",
+    "submit": "Entregar",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "reopen": "Reabrir",
+    "waiting": "Esperando"
+  }
+}

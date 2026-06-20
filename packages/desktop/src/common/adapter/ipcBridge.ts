@@ -15,6 +15,19 @@
 import type { IConfirmation } from '@/common/chat/chatLib';
 import type { AcpSlashCommandApiItem } from '@/common/chat/slash/types';
 import type { IAdminCreateUserRequest, IAdminUpdateUserRequest, IAdminUser } from '@/common/types/admin/userTypes';
+import type {
+  TCreateProjectParams,
+  TCreateTaskParams,
+  TPipelineTemplate,
+  TProject,
+  TProjectMember,
+  TProjectPerm,
+  TProjectStatus,
+  TTask,
+  TTaskAction,
+  TTaskArtifact,
+  TTaskHandoff,
+} from '@/common/types/project';
 import { bridge } from '@office-ai/platform';
 import type { OpenDialogOptions } from 'electron';
 import type {
@@ -1913,4 +1926,64 @@ export const team = {
   childTurnStarted: wsEmitter<ITeamChildTurnEvent>('team.childTurnStarted'),
   childTurnCompleted: wsEmitter<ITeamChildTurnEvent>('team.childTurnCompleted'),
   childTurnCancelled: wsEmitter<ITeamChildTurnEvent>('team.childTurnCancelled'),
+};
+
+/**
+ * Módulo Proyectos (Alinea Fase 2 #2). Mapea la API REST del Core:
+ * /api/projects*, /api/tasks*, /api/pipeline-templates. Respuestas {success,data}
+ * ya desempaquetadas por httpRequest.
+ */
+export const projects = {
+  list: httpGet<TProject[], { include_archived?: boolean } | undefined>((p) =>
+    p?.include_archived ? '/api/projects?include_archived=true' : '/api/projects'
+  ),
+  get: httpGet<TProject, { id: string }>((p) => `/api/projects/${p.id}`, { silentStatuses: [404] }),
+  create: httpPost<TProject, TCreateProjectParams>('/api/projects'),
+  update: httpPatch<TProject, { id: string; name?: string; description?: string | null; status?: TProjectStatus }>(
+    (p) => `/api/projects/${p.id}`,
+    (p) => {
+      const { id: _id, ...body } = p;
+      return body;
+    }
+  ),
+  members: httpGet<TProjectMember[], { id: string }>((p) => `/api/projects/${p.id}/members`),
+  addMember: httpPost<TProjectMember[], { id: string; user_id: string; perm?: TProjectPerm }>(
+    (p) => `/api/projects/${p.id}/members`,
+    (p) => ({ user_id: p.user_id, perm: p.perm })
+  ),
+  removeMember: httpDelete<TProjectMember[], { id: string; uid: string }>(
+    (p) => `/api/projects/${p.id}/members/${p.uid}`
+  ),
+  templates: httpGet<TPipelineTemplate[], { project_type?: string } | undefined>((p) =>
+    p?.project_type
+      ? `/api/pipeline-templates?project_type=${encodeURIComponent(p.project_type)}`
+      : '/api/pipeline-templates'
+  ),
+  instantiatePipeline: httpPost<TTask[], { id: string; template_id: string }>(
+    (p) => `/api/projects/${p.id}/pipeline`,
+    (p) => ({ template_id: p.template_id })
+  ),
+  tasks: httpGet<TTask[], { id: string }>((p) => `/api/projects/${p.id}/tasks`),
+  createTask: httpPost<TTask, TCreateTaskParams>(
+    (p) => `/api/projects/${p.project_id}/tasks`,
+    (p) => {
+      const { project_id: _pid, ...body } = p;
+      return body;
+    }
+  ),
+  getTask: httpGet<TTask, { id: string }>((p) => `/api/tasks/${p.id}`),
+  updateTask: httpPatch<TTask, { id: string; updates: Partial<TTask> }>(
+    (p) => `/api/tasks/${p.id}`,
+    (p) => p.updates
+  ),
+  transitionTask: httpPost<TTask, { id: string; action: TTaskAction }>(
+    (p) => `/api/tasks/${p.id}/transition`,
+    (p) => ({ action: p.action })
+  ),
+  taskArtifacts: httpGet<TTaskArtifact[], { id: string }>((p) => `/api/tasks/${p.id}/artifacts`),
+  addArtifact: httpPost<TTaskArtifact, { id: string; kind: string; uri: string; title: string }>(
+    (p) => `/api/tasks/${p.id}/artifacts`,
+    (p) => ({ kind: p.kind, uri: p.uri, title: p.title })
+  ),
+  taskHandoffs: httpGet<TTaskHandoff[], { id: string }>((p) => `/api/tasks/${p.id}/handoffs`),
 };
