@@ -276,9 +276,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
           {tab === 'docs' && (
             <Placeholder icon={<IconFile fontSize={30} />} title={t('projects.docsTitle')} hint={t('projects.docsSoon')} />
           )}
-          {tab === 'files' && (
-            <Placeholder icon={<IconFolder fontSize={30} />} title={t('projects.filesTitle')} hint={t('projects.filesSoon')} />
-          )}
+          {tab === 'files' && <FilesView t={t} onLink={() => Message.info(t('projects.workdriveSoon'))} />}
         </div>
       </div>
 
@@ -294,6 +292,66 @@ const Placeholder: React.FC<{ icon: React.ReactNode; title: string; hint: string
     <div className='text-12px text-t-tertiary'>{hint}</div>
   </div>
 );
+
+const MOCK_FILES = [
+  { name: 'contenimiento_pasillo.dxf', ext: 'DXF', size: '2.4 MB', indexed: true },
+  { name: 'specs_CRAC_Liebert.pdf', ext: 'PDF', size: '880 KB', indexed: true },
+  { name: 'BOM_GBM_v3.xlsx', ext: 'XLSX', size: '120 KB', indexed: false },
+  { name: 'memoria_calculo_HVAC.docx', ext: 'DOC', size: '340 KB', indexed: true },
+  { name: 'alcance_tecnico.pdf', ext: 'PDF', size: '210 KB', indexed: true },
+  { name: 'planta_electrica.dwg', ext: 'DWG', size: '1.1 MB', indexed: true },
+];
+const EXT_TINT: Record<string, string> = {
+  DXF: 'bg-primary-light-1 text-primary',
+  DWG: 'bg-primary-light-1 text-primary',
+  PDF: 'bg-danger-light-1 text-danger',
+  XLSX: 'bg-success-light-1 text-success',
+  DOC: 'bg-warning-light-1 text-warning',
+};
+
+/** Tab Archivos estilo square-ui/Files (datos mock hasta cablear WorkDrive). */
+const FilesView: React.FC<{ t: (k: string) => string; onLink: () => void }> = ({ t, onLink }) => {
+  const cad = MOCK_FILES.filter((f) => f.ext === 'DXF' || f.ext === 'DWG').length;
+  const stats = [
+    { label: t('projects.stats.total'), value: MOCK_FILES.length },
+    { label: 'CAD', value: cad },
+    { label: 'PDF', value: MOCK_FILES.filter((f) => f.ext === 'PDF').length },
+    { label: t('projects.indexedShort'), value: MOCK_FILES.filter((f) => f.indexed).length },
+  ];
+  return (
+    <div className='px-18px py-16px'>
+      <div className='flex items-center justify-between mb-14px'>
+        <div className='text-13px text-t-secondary'>{t('projects.filesTitle')}</div>
+        <Button size='small' icon={<IconFolder />} onClick={onLink}>
+          {t('projects.linkWorkdrive')}
+        </Button>
+      </div>
+      <div className='grid grid-cols-4 gap-14px mb-20px'>
+        {stats.map((s) => (
+          <div key={s.label} className='rounded-2xl border-[.5px] border-border-2 bg-bg-1 px-16px py-14px'>
+            <div className='text-12px text-t-tertiary mb-6px'>{s.label}</div>
+            <div className='text-22px font-500 leading-none text-t-primary'>{s.value}</div>
+          </div>
+        ))}
+      </div>
+      <div className='text-13px font-500 text-t-secondary mb-10px'>{t('projects.filesSection')}</div>
+      <div className='grid grid-cols-3 gap-14px'>
+        {MOCK_FILES.map((f) => (
+          <div key={f.name} className='rounded-xl border-[.5px] border-border-2 bg-bg-1 p-16px cursor-default transition-colors duration-100 hover:bg-bg-hover'>
+            <div className={`size-40px rounded-10px flex items-center justify-center text-10px font-500 mb-12px ${EXT_TINT[f.ext] ?? 'bg-fill-2 text-t-secondary'}`}>{f.ext}</div>
+            <div className='text-13px font-500 text-t-primary truncate'>{f.name}</div>
+            <div className='text-12px text-t-tertiary mt-3px flex items-center gap-6px'>
+              <span>{f.size}</span>
+              <span className='text-border-2'>·</span>
+              <span className={f.indexed ? 'text-success' : 'text-warning'}>{f.indexed ? t('projects.indexed') : t('projects.indexing')}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className='text-11px text-t-tertiary mt-18px'>{t('projects.filesMock')}</div>
+    </div>
+  );
+};
 
 const StatsRow: React.FC<{ tasks: TTask[]; t: (k: string) => string }> = ({ tasks, t }) => {
   const count = (s: TTaskStatus) => tasks.filter((x) => x.status === s).length;

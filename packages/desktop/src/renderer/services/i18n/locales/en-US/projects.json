@@ -30,6 +30,11 @@
   "copilotoSoon": "Chat con los agentes del proyecto — próximamente",
   "gateReview": "Requiere revisión",
   "gateAuto": "Auto",
+  "filesSection": "Archivos",
+  "indexed": "indexado",
+  "indexing": "indexando…",
+  "indexedShort": "Indexados",
+  "filesMock": "Datos de ejemplo — se conecta a la carpeta de Zoho WorkDrive del proyecto en una próxima iteración.",
   "stats": {
     "total": "Total"
   },
