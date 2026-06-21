@@ -53,14 +53,50 @@ const StatusDot: React.FC<{ status: TTaskStatus }> = ({ status }) => {
   return <span className={`${base} bg-danger`} />;
 };
 
-const Assignee: React.FC<{ kind: TTask['assignee_kind'] }> = ({ kind }) => (
-  <span
-    className={`size-22px rounded-full flex items-center justify-center flex-none ${kind === 'agent' ? 'bg-primary-light-1 text-primary' : 'bg-fill-2 text-t-tertiary'}`}
-    title={kind === 'agent' ? 'OpenClaw' : 'Humano'}
-  >
-    {kind === 'agent' ? <IconRobot fontSize={13} /> : <IconUser fontSize={13} />}
-  </span>
-);
+/** Agentes ejecutores disponibles (registro). El backend solo guarda assignee_id;
+ *  la ejecución real de cada uno se cablea en el slice 7. */
+const AGENTS: { id: string; name: string; short: string }[] = [
+  { id: 'openclaw', name: 'OpenClaw', short: 'HVAC · eléctrico · CAD · BOM · diseño' },
+  { id: 'hermes-servimec', name: 'Hermes ServiMec', short: 'Servicio · mantenimiento · boletas · KB' },
+];
+const agentById = (id: string | null) => AGENTS.find((a) => a.id === id);
+const taskAgentName = (task: TTask) => (task.assignee_kind === 'agent' ? agentById(task.assignee_id)?.name ?? 'Agente' : 'Humano');
+
+type AssignFn = (taskId: string, kind: TTask['assignee_kind'], agentId: string | null) => void;
+
+/** Avatar del responsable + dropdown para (re)asignar a humano u otro agente. */
+const AssignControl: React.FC<{ task: TTask; onAssign: AssignFn }> = ({ task, onAssign }) => {
+  const isAgent = task.assignee_kind === 'agent';
+  return (
+    <Dropdown
+      trigger='click'
+      position='br'
+      droplist={
+        <Menu
+          onClickMenuItem={(key) => (key === 'human' ? onAssign(task.id, 'human', null) : onAssign(task.id, 'agent', key))}
+        >
+          <Menu.Item key='human'>
+            <IconUser className='mr-6px' />
+            Humano
+          </Menu.Item>
+          {AGENTS.map((a) => (
+            <Menu.Item key={a.id}>
+              <IconRobot className='mr-6px' />
+              {a.name}
+            </Menu.Item>
+          ))}
+        </Menu>
+      }
+    >
+      <span
+        className={`size-22px rounded-full flex items-center justify-center flex-none cursor-pointer transition-colors duration-100 ${isAgent ? 'bg-primary-light-1 text-primary hover:bg-primary-light-2' : 'bg-fill-2 text-t-tertiary hover:bg-fill-3'}`}
+        title={taskAgentName(task)}
+      >
+        {isAgent ? <IconRobot fontSize={13} /> : <IconUser fontSize={13} />}
+      </span>
+    </Dropdown>
+  );
+};
 
 const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
   const { t } = useTranslation();
@@ -140,6 +176,19 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
     [loadTasks, t]
   );
 
+  // (Re)asignar una tarea a un humano o a un agente (OpenClaw / Hermes ServiMec).
+  const assign = useCallback<AssignFn>(
+    async (taskId, kind, agentId) => {
+      try {
+        await ipcBridge.projects.updateTask.invoke({ id: taskId, updates: { assignee_kind: kind, assignee_id: agentId } });
+        await loadTasks();
+      } catch (e) {
+        Message.error(t('projects.errors.transition'));
+      }
+    },
+    [loadTasks, t]
+  );
+
   // Mapa padre → subtareas (jerarquía task/subtask).
   const childrenOf = useMemo(() => {
     const map = new Map<string, TTask[]>();
@@ -170,7 +219,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
 
   const renderTask = (task: TTask, depth = 0) => (
     <React.Fragment key={task.id}>
-      <TaskRow task={task} depth={depth} busy={working === task.id} onAction={transition} t={t} />
+      <TaskRow task={task} depth={depth} busy={working === task.id} onAction={transition} onAssign={assign} t={t} />
       {(childrenOf.get(task.id) ?? []).map((child) => renderTask(child, depth + 1))}
     </React.Fragment>
   );
@@ -264,7 +313,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
                           <span className='text-11px text-t-tertiary px-7px py-1px rounded-full bg-fill-2'>{items.length}</span>
                         </div>
                         {items.map((task) => (
-                          <BoardCard key={task.id} task={task} t={t} />
+                          <BoardCard key={task.id} task={task} onAssign={assign} t={t} />
                         ))}
                       </div>
                     );
@@ -373,7 +422,7 @@ const StatsRow: React.FC<{ tasks: TTask[]; t: (k: string) => string }> = ({ task
   );
 };
 
-const BoardCard: React.FC<{ task: TTask; t: (k: string) => string }> = ({ task, t }) => {
+const BoardCard: React.FC<{ task: TTask; onAssign: AssignFn; t: (k: string) => string }> = ({ task, onAssign, t }) => {
   const running = task.status === 'in_progress' && task.assignee_kind === 'agent';
   return (
     <div className='rounded-2xl border-[.5px] border-border-2 bg-bg-1 p-14px mb-12px cursor-default transition-all duration-150 hover:border-border-1 hover:-translate-y-px'>
@@ -382,7 +431,7 @@ const BoardCard: React.FC<{ task: TTask; t: (k: string) => string }> = ({ task, 
         {task.assignee_kind === 'agent' && (
           <span className='inline-flex items-center gap-4px text-10px text-primary'>
             <IconRobot fontSize={12} />
-            OpenClaw
+            {taskAgentName(task)}
           </span>
         )}
       </div>
@@ -405,10 +454,10 @@ const BoardCard: React.FC<{ task: TTask; t: (k: string) => string }> = ({ task, 
         {running ? (
           <span className='inline-flex items-center gap-5px text-11px text-primary'>
             <span className='size-6px rounded-full bg-primary animate-[pulse_1.3s_ease-in-out_infinite]' />
-            ejecutando
+            {taskAgentName(task)}
           </span>
         ) : (
-          <Assignee kind={task.assignee_kind} />
+          <AssignControl task={task} onAssign={onAssign} />
         )}
       </div>
     </div>
@@ -449,7 +498,7 @@ const Copiloto: React.FC<{ projectName: string; handoffs: TTaskHandoff[]; onClos
   </aside>
 );
 
-const TaskRow: React.FC<{ task: TTask; depth?: number; busy: boolean; onAction: (id: string, action: TTaskAction) => void; t: (k: string) => string }> = ({ task, depth = 0, busy, onAction, t }) => {
+const TaskRow: React.FC<{ task: TTask; depth?: number; busy: boolean; onAction: (id: string, action: TTaskAction) => void; onAssign: AssignFn; t: (k: string) => string }> = ({ task, depth = 0, busy, onAction, onAssign, t }) => {
   const isDone = task.status === 'done';
   const running = task.status === 'in_progress' && task.assignee_kind === 'agent';
   return (
@@ -460,10 +509,10 @@ const TaskRow: React.FC<{ task: TTask; depth?: number; busy: boolean; onAction: 
       {running ? (
         <span className='inline-flex items-center gap-5px text-11px text-primary flex-none'>
           <span className='size-6px rounded-full bg-primary animate-[pulse_1.3s_ease-in-out_infinite]' />
-          ejecutando
+          {taskAgentName(task)}
         </span>
       ) : (
-        <Assignee kind={task.assignee_kind} />
+        <AssignControl task={task} onAssign={onAssign} />
       )}
       <span className='flex-none min-w-92px flex justify-end'>{busy ? <Spin size={14} /> : <RowAction task={task} onAction={onAction} t={t} />}</span>
     </div>
