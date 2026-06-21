@@ -70,7 +70,7 @@ const ProjectsIndex: React.FC = () => {
         <div className='flex items-center justify-between px-14px pt-14px pb-2px'>
           <span className='text-13px font-500 text-t-primary'>{t('projects.title')}</span>
           <button
-            className='size-24px flex items-center justify-center rounded-6px text-t-secondary hover:bg-bg-hover hover:text-t-primary transition-colors duration-100'
+            className='appearance-none b-none bg-transparent size-24px flex items-center justify-center rounded-6px text-t-secondary hover:bg-bg-hover hover:text-t-primary transition-colors duration-100 cursor-pointer'
             aria-label={t('projects.new')}
             onClick={() => setCreating(true)}
           >
@@ -94,8 +94,8 @@ const ProjectsIndex: React.FC = () => {
                 <button
                   key={p.id}
                   onClick={() => navigate(`/projects/${p.id}`)}
-                  className={`group w-full text-left flex items-center gap-9px px-8px h-32px rounded-6px mb-1px transition-colors duration-100 ${
-                    active ? 'bg-fill-3 text-t-primary shadow-[inset_2px_0_0_var(--primary)]' : 'text-t-secondary hover:bg-bg-hover'
+                  className={`appearance-none b-none cursor-pointer group w-full text-left flex items-center gap-9px px-8px h-32px rounded-8px mb-1px transition-colors duration-100 ${
+                    active ? 'bg-fill-2 text-t-primary' : 'bg-transparent text-t-secondary hover:bg-bg-hover'
                   }`}
                 >
                   <span className={`size-7px rotate-45 rounded-1px flex-none ${active ? 'bg-primary' : 'bg-fill-3 group-hover:bg-border-2'}`} />
@@ -108,7 +108,7 @@ const ProjectsIndex: React.FC = () => {
           {!loading && (
             <button
               onClick={() => setCreating(true)}
-              className='w-full text-left flex items-center gap-9px px-8px h-32px rounded-6px mt-2px text-t-tertiary hover:bg-bg-hover hover:text-t-secondary transition-colors duration-100'
+              className='appearance-none b-none bg-transparent cursor-pointer w-full text-left flex items-center gap-9px px-8px h-32px rounded-8px mt-2px text-t-tertiary hover:bg-bg-hover hover:text-t-secondary transition-colors duration-100'
             >
               <IconPlus />
               <span className='text-13px'>{t('projects.new')}</span>

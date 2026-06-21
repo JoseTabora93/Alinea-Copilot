@@ -242,7 +242,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
                   </>
                 )}
                 <button
-                  className='inline-flex items-center gap-5px px-7px py-1px rounded-5px border-[.5px] border-border-2 text-t-tertiary hover:text-t-secondary hover:border-border-1 transition-colors duration-100'
+                  className='appearance-none bg-transparent cursor-pointer inline-flex items-center gap-5px px-8px py-2px rounded-full border-[.5px] border-border-2 text-t-tertiary hover:text-t-secondary hover:bg-fill-1 transition-colors duration-100'
                   onClick={() => Message.info(t('projects.workdriveSoon'))}
                 >
                   <IconFolder fontSize={12} />
@@ -251,7 +251,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
               </div>
             </div>
             <div className='flex items-center gap-6px flex-none'>
-              <Button size='small' type={copiloto ? 'primary' : 'default'} icon={<IconMessage />} onClick={() => setCopiloto((v) => !v)}>
+              <Button size='small' type='text' className={copiloto ? '!bg-fill-2' : ''} icon={<IconMessage />} onClick={() => setCopiloto((v) => !v)}>
                 {t('projects.copiloto')}
               </Button>
               {tasks.length === 0 && templates.length > 0 && (
@@ -269,7 +269,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`text-13px px-10px py-7px rounded-t-6px transition-colors duration-100 ${tab === key ? 'text-t-primary font-500 shadow-[inset_0_-1.5px_0_var(--primary)]' : 'text-t-tertiary hover:text-t-secondary'}`}
+                className={`appearance-none b-none bg-transparent cursor-pointer text-13px px-2px py-8px mr-18px transition-colors duration-100 ${tab === key ? 'text-t-primary font-500 shadow-[inset_0_-2px_0_var(--primary)]' : 'text-t-tertiary hover:text-t-primary'}`}
               >
                 {label}
               </button>
@@ -469,7 +469,7 @@ const Copiloto: React.FC<{ projectName: string; handoffs: TTaskHandoff[]; onClos
     <div className='flex items-center gap-8px px-14px h-44px border-b border-border-1 text-13px font-500 text-t-primary'>
       <IconMessage />
       <span className='truncate'>Copiloto · {projectName}</span>
-      <button className='ml-auto text-t-tertiary hover:text-t-secondary' onClick={onClose} aria-label='cerrar'>
+      <button className='appearance-none b-none bg-transparent cursor-pointer ml-auto text-t-tertiary hover:text-t-secondary' onClick={onClose} aria-label='cerrar'>
         <IconClose />
       </button>
     </div>
