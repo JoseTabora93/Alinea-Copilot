@@ -226,8 +226,8 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
 
   return (
     <div className='h-full flex min-w-0'>
-      <div className='flex-1 min-w-0 flex flex-col bg-bg-base'>
-        <div className='w-full max-w-[960px] mx-auto flex-1 flex flex-col min-h-0'>
+      <div className='flex-1 min-w-0 flex flex-col items-center bg-bg-base'>
+        <div className='w-full flex-1 flex flex-col min-h-0' style={{ maxWidth: 960, marginInline: 'auto' }}>
         {/* Header */}
         <header className='px-24px pt-16px'>
           <div className='flex items-start gap-16px'>
