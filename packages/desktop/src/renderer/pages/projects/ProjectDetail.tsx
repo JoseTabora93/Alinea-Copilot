@@ -33,6 +33,15 @@ const BOARD_COLS: { key: string; label: string; states: TTaskStatus[] }[] = [
   { key: 'done', label: 'Hecho', states: ['done'] },
 ];
 const ARTIFACT_LABEL: Record<string, string> = { bom: 'BOM', alcances_obra: 'Alcances', doc: 'Doc' };
+/** Badge de estado estilo square-ui (fill suave + texto del mismo tono). */
+const STATUS_BADGE: Record<TTaskStatus, string> = {
+  todo: 'bg-fill-2 text-t-secondary',
+  blocked: 'bg-fill-2 text-t-tertiary',
+  in_progress: 'bg-warning-light-1 text-warning',
+  in_review: 'bg-primary-light-1 text-primary',
+  done: 'bg-success-light-1 text-success',
+  rejected: 'bg-danger-light-1 text-danger',
+};
 
 const StatusDot: React.FC<{ status: TTaskStatus }> = ({ status }) => {
   const base = 'size-11px rounded-full flex-none';
@@ -243,22 +252,25 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
             (tasks.length === 0 ? (
               <Empty description={t('projects.pipelineHint')} className='py-60px' />
             ) : (
-              <div className='grid grid-cols-4 gap-12px px-18px py-14px'>
-                {BOARD_COLS.map((col) => {
-                  const items = topTasks.filter((task) => col.states.includes(task.status));
-                  return (
-                    <div key={col.key} className='bg-fill-1 rounded-10px p-8px min-h-132px'>
-                      <div className='flex justify-between px-5px pt-2px pb-9px text-11px uppercase tracking-wide text-t-secondary font-500'>
-                        <span>{col.label}</span>
-                        <span className='text-t-tertiary'>{items.length}</span>
+              <>
+                <StatsRow tasks={tasks} t={t} />
+                <div className='grid grid-cols-4 gap-14px px-18px py-16px'>
+                  {BOARD_COLS.map((col) => {
+                    const items = topTasks.filter((task) => col.states.includes(task.status));
+                    return (
+                      <div key={col.key}>
+                        <div className='flex justify-between items-center px-2px pb-12px'>
+                          <span className='text-12px font-500 text-t-primary'>{col.label}</span>
+                          <span className='text-11px text-t-tertiary px-7px py-1px rounded-full bg-fill-2'>{items.length}</span>
+                        </div>
+                        {items.map((task) => (
+                          <BoardCard key={task.id} task={task} t={t} />
+                        ))}
                       </div>
-                      {items.map((task) => (
-                        <BoardCard key={task.id} task={task} />
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             ))}
 
           {tab === 'docs' && (
@@ -283,17 +295,59 @@ const Placeholder: React.FC<{ icon: React.ReactNode; title: string; hint: string
   </div>
 );
 
-const BoardCard: React.FC<{ task: TTask }> = ({ task }) => {
+const StatsRow: React.FC<{ tasks: TTask[]; t: (k: string) => string }> = ({ tasks, t }) => {
+  const count = (s: TTaskStatus) => tasks.filter((x) => x.status === s).length;
+  const cards = [
+    { label: t('projects.stats.total'), value: tasks.length, accent: 'text-t-primary' },
+    { label: STATUS_LABEL.in_progress, value: count('in_progress'), accent: 'text-warning' },
+    { label: STATUS_LABEL.in_review, value: count('in_review'), accent: 'text-primary' },
+    { label: STATUS_LABEL.done, value: count('done'), accent: 'text-success' },
+  ];
+  return (
+    <div className='grid grid-cols-4 gap-14px px-18px pt-16px'>
+      {cards.map((c) => (
+        <div key={c.label} className='rounded-2xl border-[.5px] border-border-2 bg-bg-1 px-16px py-14px'>
+          <div className='text-12px text-t-tertiary mb-6px'>{c.label}</div>
+          <div className={`text-26px font-500 leading-none ${c.accent}`}>{c.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const BoardCard: React.FC<{ task: TTask; t: (k: string) => string }> = ({ task, t }) => {
   const running = task.status === 'in_progress' && task.assignee_kind === 'agent';
   return (
-    <div className='bg-bg-1 border-[.5px] border-border-1 rounded-6px px-11px py-9px mb-8px cursor-default transition-all duration-150 hover:border-border-2 hover:-translate-y-px'>
-      <div className={`text-13px leading-snug mb-10px ${task.status === 'done' ? 'text-t-tertiary line-through' : 'text-t-primary'}`}>{task.title}</div>
+    <div className='rounded-2xl border-[.5px] border-border-2 bg-bg-1 p-14px mb-12px cursor-default transition-all duration-150 hover:border-border-1 hover:-translate-y-px'>
+      <div className='flex items-center justify-between mb-10px'>
+        <span className={`text-10px font-500 px-8px py-2px rounded-full ${STATUS_BADGE[task.status]}`}>{STATUS_LABEL[task.status]}</span>
+        {task.assignee_kind === 'agent' && (
+          <span className='inline-flex items-center gap-4px text-10px text-primary'>
+            <IconRobot fontSize={12} />
+            OpenClaw
+          </span>
+        )}
+      </div>
+      <h3 className={`text-13px font-500 leading-snug mb-12px ${task.status === 'done' ? 'text-t-tertiary line-through' : 'text-t-primary'}`}>{task.title}</h3>
+      <div className='h-px bg-border-1 opacity-60 mb-12px' />
       <div className='flex items-center justify-between'>
-        {task.produces_artifact ? <span className='text-10px text-t-secondary px-6px py-1px rounded-5px bg-fill-2'>{ARTIFACT_LABEL[task.produces_artifact] ?? task.produces_artifact}</span> : <span />}
+        <span className='inline-flex items-center gap-5px text-11px text-t-tertiary'>
+          {task.produces_artifact ? (
+            <>
+              <IconFile fontSize={14} />
+              {ARTIFACT_LABEL[task.produces_artifact] ?? task.produces_artifact}
+            </>
+          ) : (
+            <>
+              <IconList fontSize={14} />
+              {task.requires_human_review ? t('projects.gateReview') : t('projects.gateAuto')}
+            </>
+          )}
+        </span>
         {running ? (
           <span className='inline-flex items-center gap-5px text-11px text-primary'>
             <span className='size-6px rounded-full bg-primary animate-[pulse_1.3s_ease-in-out_infinite]' />
-            OpenClaw
+            ejecutando
           </span>
         ) : (
           <Assignee kind={task.assignee_kind} />

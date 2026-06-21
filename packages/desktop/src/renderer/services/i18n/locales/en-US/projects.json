@@ -28,6 +28,11 @@
   "activity": "Actividad",
   "noActivity": "Sin actividad todavía.",
   "copilotoSoon": "Chat con los agentes del proyecto — próximamente",
+  "gateReview": "Requiere revisión",
+  "gateAuto": "Auto",
+  "stats": {
+    "total": "Total"
+  },
   "errors": {
     "load": "No se pudieron cargar los proyectos",
     "create": "No se pudo crear el proyecto",
