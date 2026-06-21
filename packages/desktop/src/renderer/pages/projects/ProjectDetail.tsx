@@ -227,6 +227,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
   return (
     <div className='h-full flex min-w-0'>
       <div className='flex-1 min-w-0 flex flex-col bg-bg-base'>
+        <div className='w-full max-w-[960px] mx-auto flex-1 flex flex-col min-h-0'>
         {/* Header */}
         <header className='px-24px pt-16px'>
           <div className='flex items-start gap-16px'>
@@ -279,7 +280,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
         <div className='h-px bg-border-1 flex-none' />
 
         {/* Vistas */}
-        <div className='flex-1 overflow-y-auto'>
+        <div className='flex-1 overflow-y-auto min-h-0'>
           {tab === 'list' &&
             (tasks.length === 0 ? (
               <Empty description={t('projects.pipelineHint')} className='py-60px' />
@@ -326,6 +327,7 @@ const ProjectDetail: React.FC<Props> = ({ projectId, onChanged }) => {
             <Placeholder icon={<IconFile fontSize={30} />} title={t('projects.docsTitle')} hint={t('projects.docsSoon')} />
           )}
           {tab === 'files' && <FilesView t={t} onLink={() => Message.info(t('projects.workdriveSoon'))} />}
+        </div>
         </div>
       </div>
 
