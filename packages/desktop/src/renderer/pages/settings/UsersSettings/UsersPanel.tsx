@@ -5,18 +5,20 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Button, Dropdown, Menu, Message, Table, Tag } from '@arco-design/web-react';
+import { Button, Dropdown, Menu, Message, Spin, Table, Tag } from '@arco-design/web-react';
 import type { ColumnProps } from '@arco-design/web-react/es/Table';
-import { More, Plus, Refresh } from '@icon-park/react';
+import { Check, Edit, More, Plus, Refresh } from '@icon-park/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/renderer/hooks/context/AuthContext';
+import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import AionModal from '@/renderer/components/base/AionModal';
-import type { IAdminUser, UserRole } from '@/common/types/admin/userTypes';
+import type { IAdminRole, IAdminUser, UserRole } from '@/common/types/admin/userTypes';
 import { useAdminUsers } from './useAdminUsers';
 import { generateTempPassword } from './passwordUtils';
 import InviteUserModal from './InviteUserModal';
 import PasswordResultModal from './PasswordResultModal';
+import LimitEditorModal from '../UsageSettings/LimitEditorModal';
 
 interface RevealState {
   title: string;
@@ -37,11 +39,105 @@ function formatLastLogin(value: IAdminUser['last_login']): string | null {
   return d.isValid() ? d.format('YYYY-MM-DD HH:mm') : null;
 }
 
-/** Admin user-management panel: list, invite, activate/deactivate, change role, reset password. */
+const ROLE_TAG_COLOR = (role: string): string => (role === 'admin' ? 'arcoblue' : 'green');
+
+/** Roles cell: chips for assigned roles + a dropdown editor to toggle roles (multi-role RBAC). */
+const UserRolesCell: React.FC<{
+  user: IAdminUser;
+  catalog: IAdminRole[];
+  onAssign: (id: string, role: UserRole) => Promise<UserRole[]>;
+  onRemove: (id: string, role: UserRole) => Promise<UserRole[]>;
+}> = ({ user, catalog, onAssign, onRemove }) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [busyRole, setBusyRole] = useState<string | null>(null);
+  const roles = user.roles ?? [];
+  const labelOf = (name: string): string => catalog.find((r) => r.name === name)?.label ?? name;
+  // Fall back to the assigned roles if the catalogue failed to load.
+  const options: IAdminRole[] =
+    catalog.length > 0 ? catalog : roles.map((r) => ({ id: r, name: r, label: r, created_at: 0 }));
+
+  const toggle = async (role: UserRole) => {
+    if (busyRole) return;
+    setBusyRole(role);
+    try {
+      if (roles.includes(role)) await onRemove(user.id, role);
+      else await onAssign(user.id, role);
+    } catch (err) {
+      if (isBackendHttpError(err) && err.status === 409) {
+        Message.error(t('settings.users.lastAdminError'));
+      } else {
+        const backendMsg = isBackendHttpError(err) ? err.backendMessage : undefined;
+        Message.error(backendMsg || (err instanceof Error ? err.message : t('settings.users.roleUpdateFailed')));
+      }
+    } finally {
+      setBusyRole(null);
+    }
+  };
+
+  const droplist = (
+    <div className='py-4px min-w-200px rd-8px bg-base shadow-md border border-solid border-[var(--color-border-2)]'>
+      {options.map((role) => {
+        const assigned = roles.includes(role.name as UserRole);
+        return (
+          <div
+            key={role.id || role.name}
+            data-testid={`role-option-${user.id}-${role.name}`}
+            className='flex items-center justify-between gap-8px px-12px py-7px text-13px cursor-pointer hover:bg-fill-2'
+            onClick={() => void toggle(role.name as UserRole)}
+          >
+            <span className='text-t-primary'>{role.label}</span>
+            {busyRole === role.name ? (
+              <Spin size={12} />
+            ) : assigned ? (
+              <Check theme='outline' size='14' fill='var(--brand)' />
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className='flex items-center gap-6px flex-wrap'>
+      {roles.length === 0 ? (
+        <span className='text-12px text-t-tertiary'>{t('settings.users.noRoles')}</span>
+      ) : (
+        roles.map((r) => (
+          <Tag key={r} color={ROLE_TAG_COLOR(r)} bordered size='small'>
+            {labelOf(r)}
+          </Tag>
+        ))
+      )}
+      <Dropdown trigger='click' popupVisible={open} onVisibleChange={setOpen} droplist={droplist} position='bl'>
+        <Button
+          type='text'
+          size='mini'
+          icon={<Edit theme='outline' size='13' />}
+          aria-label={t('settings.users.manageRoles')}
+        />
+      </Dropdown>
+    </div>
+  );
+};
+
+/** Admin user-management panel: list, invite, manage roles, activate/deactivate, reset password. */
 const UsersPanel: React.FC = () => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
-  const { users, loading, error, reload, createUser, updateUser, resetPassword, deleteUser } = useAdminUsers();
+  const {
+    users,
+    roleCatalog,
+    loading,
+    error,
+    reload,
+    createUser,
+    updateUser,
+    resetPassword,
+    deleteUser,
+    assignRole,
+    removeRole,
+  } = useAdminUsers();
 
   const [inviteVisible, setInviteVisible] = useState(false);
   const [reveal, setReveal] = useState<RevealState | null>(null);
@@ -49,6 +145,7 @@ const UsersPanel: React.FC = () => {
   const [resetting, setResetting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<IAdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [limitTarget, setLimitTarget] = useState<IAdminUser | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const setPending = (id: string, pending: boolean) => {
@@ -66,19 +163,6 @@ const UsersPanel: React.FC = () => {
     try {
       await updateUser(record.id, { is_active: nextActive });
       Message.success(nextActive ? t('settings.users.activatedMsg') : t('settings.users.deactivatedMsg'));
-    } catch (err) {
-      Message.error(err instanceof Error ? err.message : t('settings.users.updateFailed'));
-    } finally {
-      setPending(record.id, false);
-    }
-  };
-
-  const handleToggleRole = async (record: IAdminUser) => {
-    const nextRole: UserRole = record.role === 'admin' ? 'member' : 'admin';
-    setPending(record.id, true);
-    try {
-      await updateUser(record.id, { role: nextRole });
-      Message.success(t('settings.users.roleUpdatedMsg'));
     } catch (err) {
       Message.error(err instanceof Error ? err.message : t('settings.users.updateFailed'));
     } finally {
@@ -126,9 +210,8 @@ const UsersPanel: React.FC = () => {
     const isSelf = record.id === currentUser?.id;
     const busy = pendingIds.has(record.id);
     // Self-protection (also enforced by the backend): an admin cannot
-    // deactivate their own account nor demote their own admin role.
+    // deactivate their own account.
     const disableDeactivate = isSelf && record.is_active;
-    const disableDemote = isSelf && record.role === 'admin';
     // The current admin and the seeded system account cannot be deleted.
     const disableDelete = isSelf || record.id === 'system_default_user';
 
@@ -142,13 +225,8 @@ const UsersPanel: React.FC = () => {
         >
           {record.is_active ? t('settings.users.actionDeactivate') : t('settings.users.actionActivate')}
         </Menu.Item>
-        <Menu.Item
-          key='toggle-role'
-          disabled={busy || disableDemote}
-          title={disableDemote ? t('settings.users.selfDemoteHint') : undefined}
-          onClick={() => void handleToggleRole(record)}
-        >
-          {record.role === 'admin' ? t('settings.users.actionMakeMember') : t('settings.users.actionMakeAdmin')}
+        <Menu.Item key='set-limit' disabled={busy} onClick={() => setLimitTarget(record)}>
+          {t('settings.usage.setLimit')}
         </Menu.Item>
         <Menu.Item key='reset-password' disabled={busy} onClick={() => setResetTarget(record)}>
           {t('settings.users.resetPassword')}
@@ -185,13 +263,11 @@ const UsersPanel: React.FC = () => {
         render: (_col, record) => <span className='text-14px text-t-secondary'>{record.display_name || '—'}</span>,
       },
       {
-        title: t('settings.users.colRole'),
-        dataIndex: 'role',
-        width: 120,
+        title: t('settings.users.colRoles'),
+        dataIndex: 'roles',
+        width: 260,
         render: (_col, record) => (
-          <Tag color={record.role === 'admin' ? 'arcoblue' : 'gray'} bordered>
-            {record.role === 'admin' ? t('settings.users.roleAdmin') : t('settings.users.roleMember')}
-          </Tag>
+          <UserRolesCell user={record} catalog={roleCatalog} onAssign={assignRole} onRemove={removeRole} />
         ),
       },
       {
@@ -222,7 +298,7 @@ const UsersPanel: React.FC = () => {
       },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, currentUser?.id, pendingIds]);
+  }, [t, currentUser?.id, pendingIds, roleCatalog, assignRole, removeRole]);
 
   return (
     <div className='flex flex-col gap-16px'>
@@ -360,6 +436,15 @@ const UsersPanel: React.FC = () => {
         password={reveal?.password ?? ''}
         onClose={() => setReveal(null)}
       />
+
+      {limitTarget && (
+        <LimitEditorModal
+          visible={Boolean(limitTarget)}
+          userId={limitTarget.id}
+          username={limitTarget.username}
+          onClose={() => setLimitTarget(null)}
+        />
+      )}
     </div>
   );
 };

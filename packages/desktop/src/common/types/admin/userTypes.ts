@@ -12,8 +12,21 @@
  * match the JSON the Rust backend serializes/deserializes.
  */
 
-/** User roles recognized by the backend. */
-export type UserRole = 'admin' | 'member';
+/**
+ * User roles recognized by the backend (multi-role RBAC, Fase 2 #5).
+ * A user can hold several of these at once.
+ */
+export type UserRole = 'admin' | 'gerencia' | 'tecnica' | 'comercial' | 'financiera' | 'ingenieria';
+
+/** Role catalogue row from `GET /api/admin/roles` (source of truth for the chips). */
+export interface IAdminRole {
+  id: string;
+  /** Stable role key, e.g. `gerencia`. */
+  name: string;
+  /** Human label, e.g. `Gerencia`. */
+  label: string;
+  created_at: number;
+}
 
 /**
  * Public user info returned by the backend. Mirrors the production `User`
@@ -22,13 +35,16 @@ export type UserRole = 'admin' | 'member';
 export interface IAdminUser {
   id: string;
   username: string;
-  role: UserRole;
-  is_active: boolean;
-  display_name: string | null;
+  /** Multi-role RBAC: the roles assigned to this user (Fase 2 #5). */
+  roles?: UserRole[];
   email?: string | null;
   /** ISO string or epoch (ms/seconds); absent/null when the user never logged in. */
   last_login?: string | number | null;
   created_at?: string | number | null;
+  /** @deprecated legacy single-role / status fields (pre-Fase 2). Optional for back-compat. */
+  role?: UserRole;
+  is_active?: boolean;
+  display_name?: string | null;
 }
 
 /** Request body for `POST /api/admin/users`. */
@@ -37,7 +53,7 @@ export interface IAdminCreateUserRequest {
   password: string;
   email?: string;
   display_name?: string;
-  /** Defaults to `member` on the backend when absent. */
+  /** @deprecated roles are assigned after creation via the roles endpoints (multi-role RBAC). */
   role?: UserRole;
 }
 

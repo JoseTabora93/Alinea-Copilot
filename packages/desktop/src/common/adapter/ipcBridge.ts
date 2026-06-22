@@ -14,7 +14,14 @@
 
 import type { IConfirmation } from '@/common/chat/chatLib';
 import type { AcpSlashCommandApiItem } from '@/common/chat/slash/types';
-import type { IAdminCreateUserRequest, IAdminUpdateUserRequest, IAdminUser } from '@/common/types/admin/userTypes';
+import type {
+  IAdminCreateUserRequest,
+  IAdminRole,
+  IAdminUpdateUserRequest,
+  IAdminUser,
+  UserRole,
+} from '@/common/types/admin/userTypes';
+import type { IUsageLimit, IUsageLimitUpdate, IUsageMe, IUsageSummary } from '@/common/types/admin/usageTypes';
 import type {
   TCreateProjectParams,
   TCreateTaskParams,
@@ -1275,6 +1282,39 @@ export const admin = {
     (p) => ({ new_password: p.new_password })
   ),
   deleteUser: httpDelete<void, { id: string }>((p) => `/api/admin/users/${encodeURIComponent(p.id)}`),
+  // Multi-role RBAC (Fase 2 #5). Catalogue + assign/remove; mutations return the
+  // user's updated roles[] so the UI refreshes chips without a full re-fetch.
+  listRoles: httpGet<IAdminRole[], void>('/api/admin/roles'),
+  assignRole: httpPost<{ id: string; roles: UserRole[] }, { id: string; role: UserRole }>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}/roles`,
+    (p) => ({ role: p.role })
+  ),
+  removeRole: httpDelete<{ id: string; roles: UserRole[] }, { id: string; role: UserRole }>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}/roles/${encodeURIComponent(p.role)}`
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// Usage ledger (Fase 2 #3), routed to /api/usage/* and /api/admin/usage|limit.
+// Rolling 30-day window by default; pass since_ms to override.
+// ---------------------------------------------------------------------------
+
+export const usage = {
+  /** Current user's own consumption + active limit. */
+  me: httpGet<IUsageMe, { since_ms?: number }>((p) =>
+    p?.since_ms ? `/api/usage/me?since_ms=${p.since_ms}` : '/api/usage/me'
+  ),
+  /** Admin-only: consumption per user (join with admin.listUsers for usernames). */
+  adminList: httpGet<IUsageSummary[], { since_ms?: number }>((p) =>
+    p?.since_ms ? `/api/admin/usage?since_ms=${p.since_ms}` : '/api/admin/usage'
+  ),
+  /** Admin-only: read a single user's active limit (null when unset). Prefills the editor. */
+  getLimit: httpGet<IUsageLimit | null, { id: string }>((p) => `/api/admin/users/${encodeURIComponent(p.id)}/limit`),
+  /** Admin-only: set a user's spend thresholds (null clears a threshold). */
+  setLimit: httpPut<IUsageLimit, { id: string } & IUsageLimitUpdate>(
+    (p) => `/api/admin/users/${encodeURIComponent(p.id)}/limit`,
+    (p) => ({ soft_usd: p.soft_usd, hard_usd: p.hard_usd })
+  ),
 };
 
 // ---------------------------------------------------------------------------
