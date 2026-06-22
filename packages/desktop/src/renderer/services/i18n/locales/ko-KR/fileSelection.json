@@ -2,5 +2,10 @@
   "selectFile": "파일 선택",
   "selectDirectory": "디렉토리 선택",
   "pleaseSelectFile": "파일을 선택하세요",
-  "pleaseSelectDirectory": "디렉토리를 선택하세요"
+  "pleaseSelectDirectory": "디렉토리를 선택하세요",
+  "accessDenied": "You don't have access to this folder.",
+  "folderNotFound": "This folder no longer exists.",
+  "goToMyFolder": "Go to my folder",
+  "newFolder": "New folder",
+  "newFolderPlaceholder": "New folder name"
 }

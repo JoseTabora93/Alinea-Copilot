@@ -4,5 +4,8 @@
   "pleaseSelectFile": "Please select a file",
   "pleaseSelectDirectory": "Please select a directory",
   "newFolder": "New folder",
-  "newFolderPlaceholder": "New folder name"
+  "newFolderPlaceholder": "New folder name",
+  "accessDenied": "You don't have access to this folder.",
+  "folderNotFound": "This folder no longer exists.",
+  "goToMyFolder": "Go to my folder"
 }

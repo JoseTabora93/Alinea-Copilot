@@ -2,5 +2,10 @@
   "selectFile": "選擇檔案",
   "selectDirectory": "選擇目錄",
   "pleaseSelectFile": "請選擇一個檔案",
-  "pleaseSelectDirectory": "請選擇一個目錄"
+  "pleaseSelectDirectory": "請選擇一個目錄",
+  "accessDenied": "You don't have access to this folder.",
+  "folderNotFound": "This folder no longer exists.",
+  "goToMyFolder": "Go to my folder",
+  "newFolder": "New folder",
+  "newFolderPlaceholder": "New folder name"
 }

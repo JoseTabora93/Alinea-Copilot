@@ -2,5 +2,10 @@
   "selectFile": "Selecionar Arquivo",
   "selectDirectory": "Selecionar Diretório",
   "pleaseSelectFile": "Por favor, selecione um arquivo",
-  "pleaseSelectDirectory": "Por favor, selecione um diretório"
+  "pleaseSelectDirectory": "Por favor, selecione um diretório",
+  "accessDenied": "You don't have access to this folder.",
+  "folderNotFound": "This folder no longer exists.",
+  "goToMyFolder": "Go to my folder",
+  "newFolder": "New folder",
+  "newFolderPlaceholder": "New folder name"
 }
