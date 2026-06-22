@@ -975,6 +975,23 @@
     "addCustomAgent": "사용자 정의 에이전트 추가",
     "customEmpty": "구성된 사용자 정의 에이전트가 없습니다. \"사용자 정의 에이전트 추가\"를 클릭하여 생성하세요."
   },
+  "commandCenter": {
+    "title": "Command Center",
+    "subtitle": "Manage and monitor your agents and gateways in one place.",
+    "kpiGateways": "Gateways",
+    "kpiConnected": "Connected",
+    "kpiPending": "Pending",
+    "kpiIssues": "Issues",
+    "comingSoon": "Coming soon",
+    "capHealth": "Live health",
+    "capHealthDesc": "Latency, errors and active tasks per agent.",
+    "capUsage": "Usage per agent",
+    "capUsageDesc": "Tokens and cost ($) per OpenClaw / Hermes / Copilot.",
+    "capFixes": "Hermes fixes",
+    "capFixesDesc": "Approve or reject skill improvements.",
+    "capLogs": "Logs & traces",
+    "capLogsDesc": "Debug multi-agent flows."
+  },
   "remoteAgent": {
     "title": "원격 에이전트",
     "add": "추가",

@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LocalAgents from '@/renderer/pages/settings/AgentSettings/LocalAgents';
+import RemoteAgentManagement from '@/renderer/pages/settings/AgentSettings/RemoteAgentManagement';
 import AionScrollArea from '@/renderer/components/base/AionScrollArea';
 import { useSettingsViewMode } from '../settingsViewContext';
 
@@ -22,13 +23,10 @@ const AgentModalContent: React.FC = () => {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'local') {
+    if (tabParam === 'local' || tabParam === 'remote') {
       setActiveTab(tabParam);
-    } else if (tabParam === 'remote') {
-      setActiveTab('local');
-      setSearchParams({ tab: 'local' });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams]);
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
@@ -48,6 +46,11 @@ const AgentModalContent: React.FC = () => {
         <Tabs.TabPane key='local' title={t('settings.agentManagement.localAgents')}>
           <AionScrollArea className='flex-1 min-h-0 pb-16px scrollbar-hide' disableOverflow={isPageMode}>
             <LocalAgents />
+          </AionScrollArea>
+        </Tabs.TabPane>
+        <Tabs.TabPane key='remote' title={t('settings.agentManagement.remoteAgents')}>
+          <AionScrollArea className='flex-1 min-h-0 pb-16px scrollbar-hide' disableOverflow={isPageMode}>
+            <RemoteAgentManagement />
           </AionScrollArea>
         </Tabs.TabPane>
       </Tabs>

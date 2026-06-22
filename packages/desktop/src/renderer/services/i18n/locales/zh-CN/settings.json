@@ -1055,6 +1055,23 @@
     "addCustomAgent": "添加自定义 Agent",
     "customEmpty": "暂无自定义 Agent，点击「添加自定义 Agent」创建。"
   },
+  "commandCenter": {
+    "title": "指挥中心",
+    "subtitle": "在一个地方管理和监控你的智能体与网关。",
+    "kpiGateways": "网关",
+    "kpiConnected": "已连接",
+    "kpiPending": "待处理",
+    "kpiIssues": "异常",
+    "comingSoon": "即将推出",
+    "capHealth": "实时健康",
+    "capHealthDesc": "每个智能体的延迟、错误和活动任务。",
+    "capUsage": "按智能体用量",
+    "capUsageDesc": "OpenClaw / Hermes / Copilot 的 tokens 与费用($)。",
+    "capFixes": "Hermes 修复",
+    "capFixesDesc": "批准或拒绝 skill 改进。",
+    "capLogs": "日志与追踪",
+    "capLogsDesc": "调试多智能体流程。"
+  },
   "remoteAgent": {
     "title": "远程 Agent",
     "add": "添加",

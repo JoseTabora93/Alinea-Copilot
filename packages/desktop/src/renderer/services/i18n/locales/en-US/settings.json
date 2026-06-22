@@ -1054,6 +1054,23 @@
     "addCustomAgent": "Add Custom Agent",
     "customEmpty": "No custom agents configured. Click \"Add Custom Agent\" to create one."
   },
+  "commandCenter": {
+    "title": "Command Center",
+    "subtitle": "Manage and monitor your agents and gateways in one place.",
+    "kpiGateways": "Gateways",
+    "kpiConnected": "Connected",
+    "kpiPending": "Pending",
+    "kpiIssues": "Issues",
+    "comingSoon": "Coming soon",
+    "capHealth": "Live health",
+    "capHealthDesc": "Latency, errors and active tasks per agent.",
+    "capUsage": "Usage per agent",
+    "capUsageDesc": "Tokens and cost ($) per OpenClaw / Hermes / Copilot.",
+    "capFixes": "Hermes fixes",
+    "capFixesDesc": "Approve or reject skill improvements.",
+    "capLogs": "Logs & traces",
+    "capLogsDesc": "Debug multi-agent flows."
+  },
   "remoteAgent": {
     "title": "Remote Agents",
     "add": "Add",
