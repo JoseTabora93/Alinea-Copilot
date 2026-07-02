@@ -1,0 +1,119 @@
+name: Build Alinea image -> GHCR
+
+# Build de la imagen Alinea Copiloto (Core Rust + WebUI) en GitHub Actions,
+# ensamblando ambos repos (este -- Alinea-Copilot -- y AlineaCopilot-Core)
+# dentro de deploy/Dockerfile, y publicando a ghcr.io. Cero build on-box.
+#
+# Triggers:
+#   - push a main (usa HEAD de ambos repos en su rama default)
+#   - workflow_dispatch manual, con refs opcionales para probar combinaciones
+#     puntuales (ej. una rama de Core contra un tag del frontend). Nota:
+#     GitHub solo permite invocar workflow_dispatch (UI/API/CLI) cuando el
+#     workflow ya existe en la rama default; una vez mergeado a main se
+#     puede disparar sobre cualquier ref con --ref.
+#
+# Verificado end-to-end 2026-07-02: run 28619982818 en VERDE, imagen
+# publicada en ghcr.io/josetabora93/alinea-copiloto (latest +
+# core-cb33132_ui-53fc3eb).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: "Ref (branch/tag/sha) de AlineaCopilot-Core a construir"
+        required: false
+        type: string
+        default: ""
+      frontend_ref:
+        description: "Ref (branch/tag/sha) de Alinea-Copilot a construir"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: josetabora93/alinea-copiloto
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Alinea-Copilot (frontend/ensamblador)
+        uses: actions/checkout@v4
+        with:
+          repository: JoseTabora93/Alinea-Copilot
+          ref: ${{ inputs.frontend_ref || github.ref }}
+          path: build/Alinea-Copilot
+
+      - name: Checkout AlineaCopilot-Core (Rust)
+        uses: actions/checkout@v4
+        with:
+          repository: JoseTabora93/AlineaCopilot-Core
+          ref: ${{ inputs.core_ref || 'main' }}
+          path: build/AlineaCopilot-Core
+
+      - name: Resolve short SHAs para el tag de la imagen
+        id: shas
+        run: |
+          CORE_SHA=$(git -C build/AlineaCopilot-Core rev-parse --short=7 HEAD)
+          UI_SHA=$(git -C build/Alinea-Copilot rev-parse --short=7 HEAD)
+          echo "core_sha=${CORE_SHA}" >> "$GITHUB_OUTPUT"
+          echo "ui_sha=${UI_SHA}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=core-${CORE_SHA}_ui-${UI_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Copiar Dockerfile canónico al build context
+        run: cp build/Alinea-Copilot/deploy/Dockerfile build/Dockerfile
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Cache de capas de Docker (GH Actions cache backend) + cache de cargo
+      # separado, porque el build de Rust (stage core-build) es el más pesado
+      # y buildx por si solo no cachea bien el registro de crates entre runs
+      # si cambia poco el Cargo.lock.
+      - name: Cache cargo registry/target (Core Rust build)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            build/AlineaCopilot-Core/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('build/AlineaCopilot-Core/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
+
+      - name: Build y push a GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: build
+          file: build/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.shas.outputs.image_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Resumen
+        run: |
+          echo "### Imagen publicada" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.shas.outputs.image_tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Core ref: ${{ inputs.core_ref || 'main' }} (${{ steps.shas.outputs.core_sha }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend ref: ${{ inputs.frontend_ref || github.ref }} (${{ steps.shas.outputs.ui_sha }})" >> "$GITHUB_STEP_SUMMARY"
