@@ -7,17 +7,18 @@ name: Build Alinea image -> GHCR
 # Triggers:
 #   - push a main (usa HEAD de ambos repos en su rama default)
 #   - workflow_dispatch manual, con refs opcionales para probar combinaciones
-#     puntuales (ej. una rama de Core contra un tag del frontend).
-#   - workflow_dispatch también se puede disparar sobre esta rama de feature
-#     (feat/ci-ghcr) para verificar el pipeline antes de mergear a main.
+#     puntuales (ej. una rama de Core contra un tag del frontend). Nota:
+#     GitHub solo permite invocar workflow_dispatch (UI/API/CLI) cuando el
+#     workflow ya existe en la rama default; una vez mergeado a main se
+#     puede disparar sobre cualquier ref con --ref.
+#
+# Verificado end-to-end 2026-07-02: run 28619982818 en VERDE, imagen
+# publicada en ghcr.io/josetabora93/alinea-copiloto (latest +
+# core-cb33132_ui-53fc3eb).
 
 on:
   push:
-    # NOTA: 'feat/ci-ghcr' se agrego temporalmente para permitir verificar
-    # el pipeline end-to-end en esta rama (GitHub solo permite disparar
-    # workflow_dispatch via API/CLI si el workflow existe en la rama
-    # default). Quitar 'feat/ci-ghcr' de este trigger al mergear a main.
-    branches: [main, feat/ci-ghcr]
+    branches: [main]
   workflow_dispatch:
     inputs:
       core_ref:
