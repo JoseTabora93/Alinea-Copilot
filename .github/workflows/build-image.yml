@@ -13,7 +13,11 @@ name: Build Alinea image -> GHCR
 
 on:
   push:
-    branches: [main]
+    # NOTA: 'feat/ci-ghcr' se agrego temporalmente para permitir verificar
+    # el pipeline end-to-end en esta rama (GitHub solo permite disparar
+    # workflow_dispatch via API/CLI si el workflow existe en la rama
+    # default). Quitar 'feat/ci-ghcr' de este trigger al mergear a main.
+    branches: [main, feat/ci-ghcr]
   workflow_dispatch:
     inputs:
       core_ref:
